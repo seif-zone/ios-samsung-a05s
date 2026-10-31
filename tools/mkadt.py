@@ -89,6 +89,7 @@ def build(seed=None, qemu=False, highmem=False, native=False, midmem=False):
         ph(),
         ('dram-base', u64(phys_base)),
         ('dram-size', u64(mem_size)),
+        ('embedded-panic-log-size', u32(0x80000)),
         ('random-seed', seed),
         ('debug-enabled', u32(1)),
         ('firmware-version', cstr('a05s-shim')),
@@ -229,6 +230,12 @@ def build(seed=None, qemu=False, highmem=False, native=False, midmem=False):
         ('opposed-power-vol-buttons', u32(1)),
     ])
 
+    # AppleARMPE / check_for_panic_log(): pram node specifies physical address and size of panic log region
+    pram = node('pram', [
+        ph(),
+        ('reg', u64(phys_base + 0x80000, 0x80000)),
+    ])
+
     product_props = d22ap_product()
     # Our framebuffer is sRGB 8-bit. With the iPhone X's 'P3' MobileGestalt says
     # HasExtendedColorDisplay and WebKit renders page tiles into 10-bit surfaces
@@ -250,7 +257,7 @@ def build(seed=None, qemu=False, highmem=False, native=False, midmem=False):
         ('manufacturer', cstr('Apple Inc.')),
         ('#address-cells', u32(2)),
         ('#size-cells', u32(2)),
-    ], [chosen, defaults, cpus, arm_io, fbcon, buttons] + product + ([] if qemu else [ufs]))
+    ], [chosen, pram, defaults, cpus, arm_io, fbcon, buttons] + product + ([] if qemu else [ufs]))
 
 
 if __name__ == '__main__':
