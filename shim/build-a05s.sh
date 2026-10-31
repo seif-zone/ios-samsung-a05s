@@ -2,6 +2,12 @@
 # Build the shim and wrap it in a boot.img v2 for Samsung Galaxy A05s (SM-A057F / m269).
 # Samsung ABL expects boot image header version 2 (BOARD_BOOTIMG_HEADER_VERSION := 2).
 set -euo pipefail
+
+PAYLOAD=""
+if [ -n "${1:-}" ]; then
+	PAYLOAD="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$1" 2>/dev/null || realpath "$1")"
+fi
+
 cd "$(dirname "$0")"
 
 CC=${CROSS_COMPILE:-aarch64-linux-gnu-}gcc
@@ -30,10 +36,10 @@ size=$((16#$(${CROSS_COMPILE:-aarch64-linux-gnu-}nm out/shim.elf | awk '$3=="_en
 truncate -s "$size" out/Image
 
 # Ramdisk: an xnu payload (tools/mkpayload.py) if given as $1, else an empty newc cpio.
-if [ -n "${1:-}" ]; then
-	echo "[*] Appending XNU payload ($1) to Image at 4K boundary..."
+if [ -n "$PAYLOAD" ]; then
+	echo "[*] Appending XNU payload ($PAYLOAD) to Image at 4K boundary..."
 	truncate -s $(( (size + 0xfff) & ~0xfff )) out/Image
-	cat "$1" >> out/Image
+	cat "$PAYLOAD" >> out/Image
 	python3 -c 'import os,struct,sys; f=open(sys.argv[1],"r+b"); f.seek(16); f.write(struct.pack("<Q", os.path.getsize(sys.argv[1])))' out/Image
 fi
 
