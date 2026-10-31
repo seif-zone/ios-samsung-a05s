@@ -241,7 +241,7 @@ index b36eeb6..3eca6d4 100644
 -		IOLog("BSD root: %s, major %d, minor %d\n", rootName, major(*root), minor(*root));
 -		*oflags = 0;
 -		goto iofrootx;
-+		kprintf("IOFindBSDRoot: SWEET UFS root unavailable (%d), falling back to md0 RAMDisk!\n", ufs_error);
++		IOLog("IOFindBSDRoot: SWEET UFS root unavailable (%d), falling back to md0 RAMDisk!\n", ufs_error);
  	}
  #endif
  
