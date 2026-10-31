@@ -157,16 +157,46 @@ An interactive simulation engine is available in `docs/index.html` (viewable dir
 │   ├── shim.c            # Core CPU & MMU initialization
 │   └── loader.c          # Embedded XNU payload unpacker
 ├── tools/
-│   ├── mkadt.py          # Apple Device Tree generator (samsung,a05s & m269 node)
-│   ├── mkpayload.py      # Mach-O chained fixup resolver and payload builder
-│   ├── mkinit.py         # Static ad-hoc signed Mach-O init wrapper
-│   └── sweet-init.S      # Standalone PID 1 early userspace verification
-├── userland/             # GPU injection, EAGL shim, and audio HAL plugins
-│   └── metal/            # Adreno 610 Metal PM4 command buffer builder & probe
-└── xnu/patches/          # Patch series applied cleanly to Apple XNU 8796 tree
-    ├── 0080-0082         # SM6225 architecture and Gold CPU topology
-    └── 0951              # Samsung A05s SM5602 gauge on SE2 (GPIO 6/7)
+│   ├── mkadt.py              # Apple Device Tree generator (samsung,a05s & m269 node)
+│   ├── mkpayload.py          # Mach-O chained fixup resolver and payload builder
+│   ├── pack_a05s_all.py      # Complete Boot Header v4 & OrangeFox flashable bundle generator
+│   ├── prepare_rootfs.py     # Stage 2 RootFS builder & sweet tweaks applicator
+│   ├── extract_cryptex_files.py # APFS Cryptex decompressor via dissect.apfs
+│   ├── pack_rootfs_tar.py    # POSIX tar packager preserving UIDs, GIDs, modes, and symlinks
+│   ├── install_ios_root.sh   # Automated deployment script for OrangeFox Recovery
+│   └── restore_android.sh    # Instant Android Custom ROM (One UI 6 / S901E) restoration script
+├── userland/                 # GPU injection, EAGL shim, and audio HAL plugins
+│   └── metal/                # Adreno 610 Metal PM4 command buffer builder & probe
+└── xnu/patches/              # Patch series applied cleanly to Apple XNU 8796 tree
+    ├── 0080-0082             # SM6225 architecture and Gold CPU topology
+    └── 0951                  # Samsung A05s SM5602 gauge on SE2 (GPIO 6/7)
 ```
+
+---
+
+## Stage 2: iOS 16 RootFS & MicroSD Deployment
+
+The Stage 2 pipeline constructs the full official **iOS 16.7.16 (`20H392`)** root filesystem from Apple IPSW (`iPhone10,3,iPhone10,6_16.7.16_20H392_Restore.ipsw`) and prepares it for safe MicroSD deployment:
+
+1. **RootFS Assembly:**
+   - Unpacks OS Root DMG (`087-86698-044.dmg`) containing `/sbin/launchd`, `/usr/libexec/backboardd`, and `/System/Library/CoreServices/SpringBoard.app`.
+   - Integrates SystemOS Cryptex (`087-86593-047.dmg`) and AppOS Cryptex (`087-86715-047.dmg`) under `/private/preboot/Cryptexes/`.
+   - Extracted and linked the unified `dyld_shared_cache_arm64` into `/System/Library/Caches/com.apple.dyld/` (where `ignition_level=1` reads it).
+   - Decompressed all LZBITMAP trampolines (`libobjc-trampolines.dylib`, `libffi-trampolines.dylib`, `libstdc++.6.0.9.dylib`) into `/usr/lib/`.
+
+2. **HakiOS & SWEET Bring-Up Tweaks:**
+   - `System/Library/xpc/launchd.plist`: Renamed `_PanicOnCrash` &rarr; `_PanicOnCrasX` (preventing panics on daemon faults) and stripped `com.apple.CommCenter`.
+   - `/private/var/containers/`: Generated `Bundle`, `Data/System`, `Shared/SystemGroup`, and `Temp`.
+   - `mobileactivationd`: Seeded `data_ark.plist` with `-ActivationState: Activated`.
+   - Preferences: Set `LastSystemVersion = 20H392` (skipping the 1-hour data migration) and `BKNoWatchdogs = true` in SpringBoard.
+   - Keybags: Created `/private/var/keybags/systembag.kb` for AppleKeyStore.
+   - Log stores: Created `/private/var/db/diagnostics/.migrated` and `uuidtext/.migrated`.
+
+3. **Safe Dual-Boot via MicroSD:**
+   - Use OrangeFox Recovery to create a 1-click backup of `Data` (`userdata`) directly to MicroSD.
+   - Run `sh /external_sd/install_ios_root.sh` in OrangeFox to unpack `ios16-root.tar`.
+   - Flash `a05s-ios-orangefox.zip` containing `a05s-boot-v4.img` and patched `vbmeta.img`.
+   - When returning to Android: Run `sh /external_sd/restore_android.sh` or tap `Restore` in OrangeFox. Zero risk of data loss.
 
 ---
 
