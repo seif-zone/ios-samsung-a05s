@@ -215,14 +215,6 @@ def build(seed=None, qemu=False, highmem=False, native=False, midmem=False):
         ('reg', u64(UFS, UFS_SIZE)),
     ])
 
-    # bsd/dev/sweet_sdhci.c: the eMMC host ABL leaves running for Samsung Galaxy A05s (SM-A057F)
-    EMMC, EMMC_SIZE = 0x07804000, 0x1000
-    emmc = node('sweet-emmc', [
-        ph(),
-        ('compatible', cstr('qcom,sm6225-sdhci') + cstr('qcom,sdhci-msm-v5')),
-        ('reg', u64(EMMC, EMMC_SIZE)),
-    ])
-
     # pmap_compute_max_asids requires the node even when no overrides are set.
     # An absent pmap-max-asids property selects XNU's own MAX_ASIDS default.
     # No effaceable storage: keybagd then reads /private/var/keybags/systembag.kb
@@ -265,7 +257,7 @@ def build(seed=None, qemu=False, highmem=False, native=False, midmem=False):
         ('manufacturer', cstr('Apple Inc.')),
         ('#address-cells', u32(2)),
         ('#size-cells', u32(2)),
-    ], [chosen, pram, defaults, cpus, arm_io, fbcon, buttons, emmc] + product + ([ufs] if ("--ufs" in sys.argv and not qemu) else []))
+    ], [chosen, pram, defaults, cpus, arm_io, fbcon, buttons, ufs] + product)
 
 
 if __name__ == '__main__':
