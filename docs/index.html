@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Samsung Galaxy A05s (SM-A057F) - iOS Darwin Boot Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#3b82f6', 600: '#2563eb' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .animate-pulse-slow { animation: pulse-slow 2s infinite ease-in-out; }
+    .scanline {
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      background-size: 100% 4px, 6px 100%;
+    }
+  </style>
+</head>
+<body class="bg-[#0d1117] text-[#c9d1d9] font-sans antialiased p-4 md:p-6 min-h-screen flex flex-col justify-between">
+
+  <!-- Header -->
+  <header class="max-w-6xl mx-auto w-full mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#30363d] pb-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="inline-block w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+        <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+          iOS Darwin XNU Boot Simulator
+          <span class="text-xs px-2 py-0.5 rounded-full bg-blue-900/60 text-blue-300 font-mono border border-blue-700">SM-A057F / m269</span>
+        </h1>
+      </div>
+      <p class="text-xs md:text-sm text-gray-400 mt-1">
+        Interactive hardware and execution simulation for Samsung Galaxy A05s (Qualcomm Snapdragon 680 / SM6225)
+      </p>
+    </div>
+
+    <!-- Repository & Status Link -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 text-xs font-mono bg-[#161b22] px-3 py-1.5 rounded-lg border border-[#30363d]">
+        <span class="text-gray-400">Arch:</span> <span class="text-amber-400">ARMv8-A</span>
+        <div class="w-px h-3 bg-gray-700"></div>
+        <span class="text-gray-400">Base:</span> <span class="text-purple-400">0xb0000000</span>
+        <div class="w-px h-3 bg-gray-700"></div>
+        <span class="text-emerald-400 font-bold" id="status-tag">READY</span>
+      </div>
+      <a href="https://github.com/seif-zone/ios-samsung-a05s" target="_blank" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold border border-neutral-700 flex items-center gap-1.5 transition">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Simulator Grid -->
+  <main class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start flex-grow">
+
+    <!-- Device Screen Mockup (5 cols) -->
+    <div class="lg:col-span-5 flex flex-col items-center">
+      <div class="relative w-[280px] sm:w-[310px] h-[600px] bg-neutral-900 rounded-[44px] p-3 shadow-2xl border-4 border-neutral-700 ring-1 ring-white/10 flex flex-col">
+        <!-- Speaker / Infinity-V Notch -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 w-14 h-4 bg-neutral-950 rounded-b-xl z-30 flex items-center justify-center">
+          <div class="w-3 h-3 rounded-full bg-neutral-800 -mt-1 border border-neutral-700"></div>
+        </div>
+
+        <!-- 20:9 Panel Screen -->
+        <div id="screen" class="relative w-full h-full bg-black rounded-[36px] overflow-hidden flex flex-col items-center justify-center select-none scanline border border-neutral-800">
+
+          <!-- 0: OFF -->
+          <div id="screen-off" class="absolute inset-0 bg-black flex flex-col items-center justify-center z-10 transition-opacity duration-300">
+            <span class="text-xs font-mono text-neutral-600 animate-pulse">DEVICE IDLE (RAM UNINITIALIZED)</span>
+            <button onclick="startSimulation()" class="mt-4 px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shadow-lg">
+              Start Simulation ▶
+            </button>
+          </div>
+
+          <!-- 1: Samsung ABL -->
+          <div id="screen-abl" class="absolute inset-0 bg-black flex flex-col items-center justify-center z-10 hidden">
+            <div class="text-white text-center font-bold tracking-wider text-lg">SAMSUNG</div>
+            <div class="text-neutral-400 text-xs mt-1">Galaxy A05s</div>
+            <div class="absolute bottom-12 flex flex-col items-center">
+              <span class="text-[10px] text-neutral-400 font-sans tracking-wide">Secured by</span>
+              <span class="text-xs text-white font-bold tracking-widest uppercase">knox</span>
+              <span class="text-[9px] text-neutral-400 mt-2">powered by android</span>
+            </div>
+          </div>
+
+          <!-- 2: Shim Red Console -->
+          <div id="screen-shim" class="absolute inset-0 bg-[#b20000] text-white p-4 font-mono text-[11px] leading-tight flex flex-col justify-start z-10 hidden text-left" dir="ltr">
+            <div class="font-bold text-yellow-300">SHIM sweet milestone 4: xnu loader</div>
+            <div class="mt-2 text-white">MMFR0 lo=0x00112222 tg16=0</div>
+            <div>MIDR  el1=0x51af8014 mpidr=0x0</div>
+            <div class="mt-2 text-yellow-200">SILVER: no 16K granule</div>
+            <div class="text-yellow-200">handing off to gold CPU 0x100</div>
+            <div class="mt-2 text-emerald-300">PSCI CPU_ON(0x100) -> OK</div>
+            <div class="text-white">parked silver in wfi...</div>
+            <div class="mt-3 text-cyan-200">EMBED payload at 0xb0000000</div>
+            <div class="text-cyan-200">LOADER: sweetxnu entry 0xb14ca488</div>
+          </div>
+
+          <!-- 3: Darwin XNU Console -->
+          <div id="screen-xnu" class="absolute inset-0 bg-black text-white p-3 font-mono text-[10px] leading-snug flex flex-col justify-start z-10 hidden text-left overflow-hidden" dir="ltr">
+            <div class="text-emerald-400 font-bold">Darwin Kernel Version 22.6.0: xnu-8796</div>
+            <div class="text-neutral-400">root:xnu-8796~1/DEVELOPMENT_ARM64_SWEET</div>
+            <div class="mt-1 text-white">AppleARMPE: CPU0 MPIDR 0x100 (Kryo 260 Gold)</div>
+            <div class="text-cyan-300">SweetPlatformExpert: samsung,a057f (m269)</div>
+            <div class="text-white">mem: phys_base=0xb0000000 size=1232MB</div>
+            <div class="text-white">AppleCLCD: 1080x2400 @ 32bpp FB at 0x5c000000</div>
+            <div class="text-yellow-300">I2C1: SM5602 gauge probed SE2 (0x04a88000)</div>
+            <div class="text-yellow-300">battery: 100%, 4210mV, charging</div>
+            <div class="mt-1 text-white">IOFindBSDRoot: memory device /dev/md0</div>
+            <div class="text-emerald-300 font-bold">BSD root: md0 (MockFS / Ramdisk) mounted</div>
+            <div class="mt-1 text-white">executing /sbin/launchd (PID 1)...</div>
+            <div class="text-purple-300">org.sweet.init: PID 1 alive, userland OK</div>
+          </div>
+
+          <!-- 4: Apple Logo Progress -->
+          <div id="screen-apple" class="absolute inset-0 bg-black flex flex-col items-center justify-center z-10 hidden">
+            <svg class="w-16 h-16 fill-white" viewBox="0 0 170 170">
+              <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.07-7.73-7.94-12.09-14.61-6.19-9.5-10.98-20.2-14.37-32.08-3.39-11.89-5.08-23.01-5.08-33.37 0-14.15 3.5-25.79 10.51-34.92 7-9.14 15.82-13.8 26.47-13.99 4.8 0 10.15 1.25 16.06 3.75 5.91 2.5 9.68 3.82 11.31 3.96 1.35 0 5.42-1.42 12.21-4.25 6.79-2.83 12.56-4.13 17.3-3.9 12.83.66 22.84 5.39 30.03 14.2-11.45 6.94-17.07 16.51-16.85 28.71.21 9.5 3.82 17.39 10.83 23.66 7.01 6.27 15.42 9.77 25.22 10.5-2.28 6.9-4.8 13.54-7.55 19.93zM119.22 31.84c0-7.39 2.67-14.37 8.01-20.93 5.34-6.56 12.03-10.47 20.08-11.72.33 1.1.49 2.14.49 3.13 0 7.42-2.73 14.54-8.19 21.36-5.46 6.82-12.33 10.68-20.61 11.58-.33-1.07-.49-2.14-.49-3.21z"/>
+            </svg>
+            <div class="w-36 h-1 bg-neutral-800 rounded-full mt-10 overflow-hidden">
+              <div id="apple-progress" class="h-full bg-white transition-all duration-300 w-0"></div>
+            </div>
+          </div>
+
+          <!-- 5: SpringBoard GUI -->
+          <div id="screen-ios" class="absolute inset-0 bg-cover bg-center flex flex-col justify-between p-4 z-10 hidden text-white" style="background-image: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+            <div class="flex justify-between items-center text-[10px] font-semibold pt-1">
+              <span>9:41</span>
+              <div class="flex items-center gap-1">
+                <span>LTE</span>
+                <div class="w-4 h-2 border border-white rounded-[2px] p-[1px] flex items-center">
+                  <div class="h-full bg-white w-full"></div>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col items-center mt-12">
+              <span class="text-3xl font-light">09:41</span>
+              <span class="text-xs text-neutral-200 mt-1">Saturday, October 31</span>
+              <div class="mt-4 px-3 py-1 rounded-full bg-black/30 backdrop-blur-md border border-white/20 text-[10px] flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                Darwin XNU 22.6.0 on SM-A057F
+              </div>
+            </div>
+            <div class="flex flex-col items-center pb-2">
+              <span class="text-[10px] text-neutral-300 animate-bounce">Swipe up to unlock</span>
+              <div class="w-28 h-1 bg-white rounded-full mt-2"></div>
+            </div>
+          </div>
+
+        </div>
+        <div class="w-full flex justify-center py-2">
+          <div class="w-20 h-1 bg-neutral-700 rounded-full"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Telemetry & Controls (7 cols) -->
+    <div class="lg:col-span-7 flex flex-col gap-4">
+
+      <!-- Playback Card -->
+      <div class="bg-[#161b22] p-4 rounded-xl border border-[#30363d] shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            <span>🎮</span> Simulation Controller
+          </h2>
+          <span id="step-counter" class="text-xs font-mono text-blue-400 bg-blue-950/60 px-2 py-0.5 rounded border border-blue-800">Stage: 0 / 5</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button id="btn-play" onclick="toggleAutoPlay()" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-1 transition">
+            <span id="play-icon">▶</span> <span id="play-text">Auto Play</span>
+          </button>
+          <button onclick="nextStep()" class="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center justify-center gap-1 transition">
+            <span>⏭</span> Next Step
+          </button>
+          <button onclick="prevStep()" class="px-3 py-2 rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-semibold flex items-center justify-center gap-1 transition">
+            <span>⏮</span> Previous
+          </button>
+          <button onclick="resetSimulation()" class="px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold flex items-center justify-center gap-1 transition">
+            <span>🔄</span> Reset
+          </button>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-[#30363d]">
+          <div class="flex justify-between text-[11px] text-gray-400 mb-1">
+            <span>ABL</span>
+            <span>Shim</span>
+            <span>XNU Init</span>
+            <span>Ramdisk</span>
+            <span>SpringBoard</span>
+          </div>
+          <div class="w-full bg-neutral-800 h-2 rounded-full overflow-hidden flex">
+            <div id="timeline-bar" class="bg-blue-500 h-full w-0 transition-all duration-300"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hardware Registers State -->
+      <div class="bg-[#161b22] p-4 rounded-xl border border-[#30363d] shadow-sm">
+        <h2 class="text-sm font-bold text-white mb-2 flex items-center gap-2">
+          <span>⚡</span> Hardware Registers & CPU State
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono text-xs">
+          <div class="p-2 bg-neutral-900/80 rounded border border-neutral-800">
+            <div class="text-gray-400 text-[10px]">ACTIVE CPU (MPIDR)</div>
+            <div id="reg-mpidr" class="text-yellow-400 font-bold">0x0 (Silver 0)</div>
+          </div>
+          <div class="p-2 bg-neutral-900/80 rounded border border-neutral-800">
+            <div class="text-gray-400 text-[10px]">PROGRAM COUNTER (PC)</div>
+            <div id="reg-pc" class="text-cyan-400 font-bold">0x00000000</div>
+          </div>
+          <div class="p-2 bg-neutral-900/80 rounded border border-neutral-800">
+            <div class="text-gray-400 text-[10px]">EXCEPTION LEVEL</div>
+            <div id="reg-el" class="text-purple-400 font-bold">EL2 (Hyp)</div>
+          </div>
+          <div class="p-2 bg-neutral-900/80 rounded border border-neutral-800">
+            <div class="text-gray-400 text-[10px]">16K GRANULE (TGran16)</div>
+            <div id="reg-tg16" class="text-rose-400 font-bold">0 (Unsupported)</div>
+          </div>
+          <div class="p-2 bg-neutral-900/80 rounded border border-neutral-800">
+            <div class="text-gray-400 text-[10px]">PHYSICAL RAM BASE</div>
+            <div class="text-emerald-400 font-bold">0xb0000000</div>
+          </div>
+          <div class="p-2 bg-neutral-900/80 rounded border border-neutral-800">
+            <div class="text-gray-400 text-[10px]">SPLASH FRAMEBUFFER</div>
+            <div class="text-blue-400 font-bold">0x5c000000</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Execution Console Log -->
+      <div class="bg-[#161b22] p-4 rounded-xl border border-[#30363d] shadow-sm flex flex-col flex-grow">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            <span>📜</span> Execution Trace (Console TTY)
+          </h2>
+          <span class="text-[10px] text-gray-400 font-mono">115200 8N1</span>
+        </div>
+        <div id="log-console" class="h-44 bg-neutral-950 p-3 rounded-lg border border-neutral-800 font-mono text-[11px] leading-relaxed text-gray-300 overflow-y-auto select-text text-left" dir="ltr">
+          <span class="text-neutral-500">[0.000000] System standing by. Click Start Simulation or Next Step to initiate boot...</span>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    let currentStep = 0;
+    let autoPlayInterval = null;
+
+    const stages = [
+      {
+        id: 0,
+        name: "Idle / Standby",
+        mpidr: "0x0 (Silver 0)",
+        pc: "0x00000000",
+        el: "OFF",
+        tg16: "0 (Disabled)",
+        status: "STANDBY",
+        log: "[0.000000] Power applied. Samsung ABL bootloader standing by."
+      },
+      {
+        id: 1,
+        name: "Samsung ABL Bootloader",
+        mpidr: "0x0 (Silver 0)",
+        pc: "0x9fc00000",
+        el: "EL2 (Hyp)",
+        tg16: "0 (Unsupported)",
+        status: "ABL_EXEC",
+        log: "[0.001240] Samsung ABL initialized. Validating boot.img (Header Version 2)...\n[0.002810] Loading kernel image to 0x40008000 via fastboot boot.\n[0.004120] Jumping to shim entrypoint..."
+      },
+      {
+        id: 2,
+        name: "Shim & Gold CPU Handoff",
+        mpidr: "0x0 -> 0x100",
+        pc: "0x40008000",
+        el: "EL1 (Kernel)",
+        tg16: "TGran16 = 1 (Gold)",
+        status: "SHIM_BOOT",
+        log: "[0.005340] SHIM: sweet milestone 4 (samsung,a057f / m269)\n[0.006120] MMFR0: tg16=0 on Silver CPU0. XNU requires 16K granule!\n[0.007500] Invoking PSCI CPU_ON(0x100, secondary_entry) for Kryo Gold...\n[0.008920] Gold CPU 0x100 woke up! Silver core parked with WFI.\n[0.012400] Found embedded SWEETXNU payload behind _end."
+      },
+      {
+        id: 3,
+        name: "Darwin XNU Kernel Init",
+        mpidr: "0x100 (Gold 0)",
+        pc: "0xb14ca488",
+        el: "EL1 (Kernel)",
+        tg16: "1 (16KB Granule)",
+        status: "XNU_INIT",
+        log: "[0.015200] Darwin Kernel Version 22.6.0: root:xnu-8796~1/DEVELOPMENT_ARM64_SWEET\n[0.018450] AppleARMPE: CPU0 MPIDR 0x100 (Kryo 260 Gold) online\n[0.021100] SweetPlatformExpert: recognized samsung,a057f (m269)\n[0.025300] AppleCLCD: configured 1080x2400 continuous framebuffer at 0x5c000000\n[0.031200] I2C1: SM5602 fuel gauge operational on QUP0 SE2 (0x04a88000)"
+      },
+      {
+        id: 4,
+        name: "MockFS Ramdisk Mount",
+        mpidr: "0x100 (Gold 0)",
+        pc: "0xfffffe00074ca488",
+        el: "EL1 (Kernel)",
+        tg16: "1 (16KB Granule)",
+        status: "ROOTFS_MOUNT",
+        log: "[0.045100] IOFindBSDRoot: booting from memory device /dev/md0 (rd=md0)\n[0.048200] BSD root: md0 mounted (MockFS Ramdisk)\n[0.052100] Spawning PID 1: /sbin/launchd\n[0.058900] org.sweet.init: static userland binary executing as PID 1!"
+      },
+      {
+        id: 5,
+        name: "SpringBoard & GUI Ready",
+        mpidr: "0x100 (Gold 0)",
+        pc: "0x0000000100004000",
+        el: "EL0 (Userland)",
+        tg16: "1 (16KB Granule)",
+        status: "UI_ACTIVE",
+        log: "[0.120400] backboardd initialized: display session active.\n[0.185200] SpringBoard: Home screen rendered at 1080x2400.\n[0.210000] Samsung Galaxy A05s (SM-A057F) iOS Darwin bring-up COMPLETE!"
+      }
+    ];
+
+    function updateUI() {
+      const stage = stages[currentStep];
+
+      document.getElementById('screen-off').classList.add('hidden');
+      document.getElementById('screen-abl').classList.add('hidden');
+      document.getElementById('screen-shim').classList.add('hidden');
+      document.getElementById('screen-xnu').classList.add('hidden');
+      document.getElementById('screen-apple').classList.add('hidden');
+      document.getElementById('screen-ios').classList.add('hidden');
+
+      if (currentStep === 0) {
+        document.getElementById('screen-off').classList.remove('hidden');
+      } else if (currentStep === 1) {
+        document.getElementById('screen-abl').classList.remove('hidden');
+      } else if (currentStep === 2) {
+        document.getElementById('screen-shim').classList.remove('hidden');
+      } else if (currentStep === 3) {
+        document.getElementById('screen-xnu').classList.remove('hidden');
+      } else if (currentStep === 4) {
+        document.getElementById('screen-apple').classList.remove('hidden');
+        document.getElementById('apple-progress').style.width = '60%';
+      } else if (currentStep === 5) {
+        document.getElementById('screen-ios').classList.remove('hidden');
+      }
+
+      document.getElementById('step-counter').innerText = `Stage: ${currentStep} / 5 (${stage.name})`;
+      document.getElementById('timeline-bar').style.width = `${(currentStep / 5) * 100}%`;
+
+      document.getElementById('reg-mpidr').innerText = stage.mpidr;
+      document.getElementById('reg-pc').innerText = stage.pc;
+      document.getElementById('reg-el').innerText = stage.el;
+      document.getElementById('reg-tg16').innerText = stage.tg16;
+      document.getElementById('status-tag').innerText = stage.status;
+
+      const consoleEl = document.getElementById('log-console');
+      consoleEl.innerHTML = stages.slice(0, currentStep + 1).map(s => {
+        return `<div class="mb-2"><span class="text-blue-400 font-bold">>>> [${s.name}]</span>\n${s.log}</div>`;
+      }).join('');
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    function nextStep() {
+      if (currentStep < 5) {
+        currentStep++;
+        updateUI();
+      } else {
+        stopAutoPlay();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        updateUI();
+      }
+    }
+
+    function resetSimulation() {
+      stopAutoPlay();
+      currentStep = 0;
+      updateUI();
+    }
+
+    function startSimulation() {
+      currentStep = 1;
+      updateUI();
+    }
+
+    function toggleAutoPlay() {
+      if (autoPlayInterval) {
+        stopAutoPlay();
+      } else {
+        document.getElementById('play-icon').innerText = '⏸';
+        document.getElementById('play-text').innerText = 'Pause';
+        if (currentStep >= 5) currentStep = 0;
+        nextStep();
+        autoPlayInterval = setInterval(() => {
+          if (currentStep < 5) {
+            nextStep();
+          } else {
+            stopAutoPlay();
+          }
+        }, 2200);
+      }
+    }
+
+    function stopAutoPlay() {
+      if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+      }
+      document.getElementById('play-icon').innerText = '▶';
+      document.getElementById('play-text').innerText = 'Auto Play';
+    }
+
+    updateUI();
+  </script>
+</body>
+</html>

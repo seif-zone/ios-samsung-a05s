@@ -94,6 +94,21 @@ bash shim/build-a05s.sh out/a05s.payload
 
 ---
 
+## Boot Simulation & Pre-Flight Verifier
+
+An interactive simulation and offline verification suite are included to test payload math, physical memory coordinates, and execution flow before touching real hardware:
+
+### 1. Offline Pre-Flight Verifier
+Run the standalone pre-flight script to parse the payload and ADT, verifying entry points, memory carveouts, and PSCI handoffs:
+`sh
+python3 tools/sim-preflight.py out/a05s.payload out/a05s.adt
+`
+
+### 2. Interactive Boot Simulator (Web UI)
+An interactive simulation engine is available in docs/index.html (viewable directly in your browser or deployed via GitHub Pages), simulating the transition from Samsung ABL to shim on Silver core, PSCI wake-up of Gold CPU 0, Darwin XNU kernel initialization, MockFS Ramdisk mount, and SpringBoard handoff on an accurate model of the Samsung Galaxy A05s.
+
+---
+
 ## Booting on Device (Fastboot Tethered Boot)
 
 > **Safe Testing:** Always use `fastboot boot` to run from RAM without flashing or modifying physical partitions.
