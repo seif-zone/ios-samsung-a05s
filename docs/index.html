@@ -37,6 +37,9 @@
         <span class="text-xs px-2.5 py-0.5 rounded-full bg-[#1f6feb]/20 text-[#58a6ff] border border-[#1f6feb]/40 font-mono">
           SM-A057F / m269
         </span>
+        <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-900/30 text-purple-300 border border-purple-800 font-mono">
+          HakiOS Aligned
+        </span>
       </div>
       <p class="text-xs md:text-sm text-gray-400 mt-1">
         Realistic hardware cold-boot benchmark (~2m 04s) for Qualcomm Snapdragon 680 (Kryo 260) & Darwin XNU
@@ -583,7 +586,7 @@
           what: "backboardd initializes the display session. SpringBoard presents the full iOS 16 Lock Screen with San Francisco Depth Clock, battery & SoC widgets, and gesture navigation. Total cold boot completed in 2m 04s.",
           why: "Full userland graphical interface operating natively on top of the Darwin XNU kernel.",
           hw: "Direct scanout from 1080x2400 panel at 0x5c000000, 32bpp ARGB, Touch input ready.",
-          source: "userland/gpu/topaz_inject.c & backboardd"
+          source: "userland/metal/ (Adreno 610 PM4), topaz_inject.c & backboardd"
         },
         log: "[102.860100] backboardd initialized: display session active.\n[115.120300] SpringBoard: Lock screen rendered with iOS 16 depth font.\n[124.500000] COLD BOOT COMPLETED in 2m 04.5s (124.500s)! iOS 16 fully operational on Samsung A05s."
       }
