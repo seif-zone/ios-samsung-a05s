@@ -1,30 +1,31 @@
-# Credits and licences
+# Credits and Licences
 
-## HackiOS (OOSEX GANG)
+## Samsung Galaxy A05s (SM-A057F / m269) Port
 
-Much of the GPU, display, audio, Wi-Fi glue and sandbox work here started from **HackiOS**, which
-boots XNU and the iOS 16.5 user space on the POCO X5 Pro (redwood):
+- **Port Lead & Maintainer:** **Seif** ([@seif-zone](https://github.com/seif-zone))
+  - Samsung Galaxy A05s platform bring-up.
+  - Samsung ABL Android Boot Header Version 2 implementation (`BOARD_BOOTIMG_HEADER_VERSION := 2`).
+  - Qualcomm SM6225 / Khaje register mapping for Longcheer `m269` devicetree.
+  - Silicon Mitus SM5602 battery fuel gauge adaptation on QUP0 SE2 (`0x04a88000`) on GPIO 6/7 (TLMM WEST tile).
+  - eMMC 5.1 storage bypass via embedded MockFS / Ramdisk (`rd=md0`) payload bootstrap.
+  - Apple Device Tree (ADT) hardware definition for `samsung,a05s` and `samsung,m269`.
 
-- kernel: <https://github.com/oosexgang/hackios-xnu-kernel> — Apple Public Source License 2.0
-- user space: <https://github.com/oosexgang/hackios-xnu-userland> — MIT License, Copyright (c) 2026 OOSEX GANG
+---
 
-Until HackiOS published its source (2026-10-22) these parts were kept in a private tree; they are
-now here, with our changes for the Redmi Note 12 4G (topaz, SM6225 / Adreno 610).
+## Upstream Projects and Core Contributors
 
-### Kernel patches derived from HackiOS (APSL 2.0)
+### HackiOS (OOSEX GANG)
 
-`xnu/patches/0900-*` and `0901-*` … `0947-*` contain, adapted and modified for topaz:
-`RedwoodGPU.cpp` (msm-style GPU client), the `MiniIOMobileFramebuffer` presentation ideas
-(SwapEnd handed to a presenter thread, vsync notification layout), `redwood_apple80211` /
-`redwood_sta` / `redwood_net` (Apple80211 for wifid), the `/dev/redwood-audio` interface, the
-minisandbox container path, and `kern.exec_inject`. Like XNU itself, these files are under the
-APSL 2.0; every patch records what we changed in its commit message.
+Much of the GPU, display presentation, audio, Wi-Fi glue and sandbox infrastructure originates from **HackiOS**, which boots XNU and iOS 16 user space on the POCO X5 Pro (`redwood`):
 
-### User space derived from HackiOS (MIT)
+- **Kernel:** <https://github.com/oosexgang/hackios-xnu-kernel> &ndash; Apple Public Source License 2.0
+- **User space:** <https://github.com/oosexgang/hackios-xnu-userland> &ndash; MIT License, Copyright (c) 2026 OOSEX GANG
 
-`userland/gpu/eagl.c`, `userland/gpu/gl_osmesa.c`, `userland/gpu/inject.c`,
-`userland/mesa/*` (freedreno Darwin patches, `redwood-drm`) and `userland/audio/*`
-(the RedwoodAudio HAL plug-in) are based on HackiOS user space:
+#### Kernel patches derived from HackiOS (APSL 2.0)
+`xnu/patches/0900-*` and `0901-*` through `0947-*` contain, adapted and modified: `RedwoodGPU.cpp` (msm-style GPU client), `MiniIOMobileFramebuffer` presentation pipeline (SwapEnd handed to presenter thread, vsync notification layout), `redwood_apple80211` / `redwood_sta` / `redwood_net` (Apple80211 for `wifid`), `/dev/redwood-audio` interface, minisandbox container path, and `kern.exec_inject`. Like XNU itself, these files are under APSL 2.0.
+
+#### User space derived from HackiOS (MIT)
+`userland/gpu/eagl.c`, `userland/gpu/gl_osmesa.c`, `userland/gpu/inject.c`, `userland/mesa/*` (freedreno Darwin patches, `redwood-drm`), and `userland/audio/*` (RedwoodAudio HAL plug-in) are licensed under MIT:
 
 ```
 MIT License
@@ -50,8 +51,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## Others
+---
 
-- **ios-sweet** (dipa-studio): the XNU port this tree is built on.
-- **Mesa / freedreno**: the OpenGL ES driver for the Adreno.
-- **blacktop/darwin-xnu-build**: the XNU build scripts.
+### ios-topaz & ios-sweet
+
+- **ios-topaz:** Architecture foundation for Qualcomm Snapdragon 680/685 (SM6225 / Khaje), Cortex-A53 PFZ atomics emulation, and PSCI Gold CPU wake-up handoff.
+- **ios-sweet (dipa-studio):** <https://github.com/dipa-studio/ios-sweet> &ndash; The original Darwin XNU port on Qualcomm hardware and iPhone X userland bring-up.
+
+---
+
+### Tools and Components
+
+- **Apple Inc.:** Darwin XNU Kernel (APSL 2.0), IOHIDFamily, libpthread, and HFS filesystem.
+- **blacktop:** [darwin-xnu-build](https://github.com/blacktop/darwin-xnu-build) &ndash; Automated XNU compilation harness.
+- **Mesa / freedreno:** Open-source OpenGL ES driver for Adreno graphics.
+- **BearSSL:** Embedded SSL/TLS implementation.
