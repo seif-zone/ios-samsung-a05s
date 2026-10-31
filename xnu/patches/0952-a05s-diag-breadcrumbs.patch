@@ -1,28 +1,18 @@
-From 7890abcdef1234567890abcdef1234567890abcd Mon Sep 17 00:00:00 2001
-From: A05s Developer <dev@a05s.local>
-Date: Sat, 31 Oct 2026 23:55:00 +02:00
-Subject: [PATCH] a05s-0952: breadcrumbs, console noretarget, safe UFS probe, and timer init
-
----
- bsd/dev/sweet_ufs.c                   | 13 +++++++++++++
- bsd/kern/bsd_init.c                   |  6 ++++++
- iokit/Kernel/arm/SweetFramebuffer.cpp | 12 ++++++++++--
- iokit/bsddev/IOKitBSDInit.cpp         |  4 ++++
- pexpert/arm/pe_identify_machine.c     |  2 +-
- 5 files changed, 34 insertions(+), 3 deletions(-)
-
 diff --git a/bsd/dev/sweet_ufs.c b/bsd/dev/sweet_ufs.c
-index a8bc944..34def56 100644
+index 143db60..6826d43 100644
 --- a/bsd/dev/sweet_ufs.c
 +++ b/bsd/dev/sweet_ufs.c
-@@ -476,4 +476,6 @@ static int
+@@ -475,7 +475,9 @@ sweet_ufs_read_part(const char *want, uint64_t off, void *dst, uint64_t len)
+ static int
  ufs_take_over_host(void)
  {
 +	kprintf("SWEET UFS: ufs_take_over_host: reading REG_HCE at %p...\n", (void *)(su.regs + REG_HCE));
  	uint32_t hce = ufs_rd(REG_HCE), hcs = ufs_rd(REG_HCS);
 +	kprintf("SWEET UFS: hce=0x%x hcs=0x%x\n", hce, hcs);
  	if (!(hce & 1) || !(hcs & HCS_DP) || !(hcs & HCS_UTRLRDY)) {
-@@ -746,4 +748,15 @@ sweet_ufs_init(void)
+ 		printf("SWEET UFS: host not ready (hce 0x%x hcs 0x%x)\n", hce, hcs);
+ 		return ENXIO;
+@@ -745,6 +747,16 @@ sweet_ufs_init(void)
  	char want[64] = "userdata";
  	int error;
  
@@ -38,39 +28,53 @@ index a8bc944..34def56 100644
 +
  	if (SecureDTLookupEntry(NULL, "/sweet-ufs", &node) != kSuccess ||
  	    SecureDTGetProperty(node, "reg", (void const **)&reg, &size) != kSuccess ||
+ 	    size < 2 * sizeof(uintptr_t)) {
 diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
-index 2cb9842..9d0281c 100644
+index bb2a2bf..ad57fe7 100644
 --- a/bsd/kern/bsd_init.c
 +++ b/bsd/kern/bsd_init.c
-@@ -875,4 +875,5 @@ bsd_init(void)
+@@ -873,13 +873,17 @@ bsd_init(void)
+ 		int err;
+ 
  		bsd_init_kprintf("calling setconf\n");
 +		kprintf("BSD_INIT: calling setconf()...\n");
  		setconf();
 +		kprintf("BSD_INIT: setconf() finished, rootdevice='%s'\n", rootdevice);
  #if CONFIG_NETBOOT
-@@ -881,3 +882,4 @@ bsd_init(void)
+ 		netboot = (mountroot == netboot_mountroot);
+ #endif
+ 
  		bsd_init_kprintf("vfs_mountroot\n");
 +		kprintf("BSD_INIT: calling vfs_mountroot()...\n");
  		if (0 == (err = vfs_mountroot())) {
 +			kprintf("BSD_INIT: vfs_mountroot() succeeded!\n");
  			break;
-@@ -1100,2 +1102,3 @@ bsdinit_task(void)
+ 		}
+ 		rootdevice[0] = '\0';
+@@ -1098,6 +1102,7 @@ bsdinit_task(void)
+ 
  	bsd_init_kprintf("bsd_do_post - done");
  
 +	kprintf("BSD_INIT: load_init_program() spawning launchd...\n");
  	load_init_program(p);
-@@ -1134,3 +1137,5 @@ setconf(void)
+ 	lock_trace = 1;
+ }
+@@ -1131,7 +1136,9 @@ setconf(void)
+ 	u_int32_t       flags;
  	kern_return_t   err;
  
 +	kprintf("BSD_INIT: setconf: calling IOFindBSDRoot...\n");
  	err = IOFindBSDRoot(rootdevice, sizeof(rootdevice), &rootdev, &flags);
 +	kprintf("BSD_INIT: setconf: IOFindBSDRoot returned %d (rootdev='%s')\n", err, rootdevice);
  	if (err) {
+ 		printf("setconf: IOFindBSDRoot returned an error (%d);"
+ 		    "setting rootdevice to 'sd0a'.\n", err);     /* XXX DEBUG TEMP */
 diff --git a/iokit/Kernel/arm/SweetFramebuffer.cpp b/iokit/Kernel/arm/SweetFramebuffer.cpp
-index 72bc61e..49ac302 100644
+index 1d3ee17..0c131cf 100644
 --- a/iokit/Kernel/arm/SweetFramebuffer.cpp
 +++ b/iokit/Kernel/arm/SweetFramebuffer.cpp
-@@ -441,5 +441,14 @@ AppleCLCD::start(IOService *provider)
+@@ -439,10 +439,16 @@ AppleCLCD::start(IOService *provider)
+ 			fConsPhys = fCons->getPhysicalSegment(0, NULL, kIOMemoryMapperNone);
  			sweet_cons_fb = this;
  			sweet_console_show_hook = sweet_cons_show;
 -			sweet_console_retarget((vm_offset_t)c);
@@ -88,36 +92,55 @@ index 72bc61e..49ac302 100644
 +				IOLog("SWEET FB: console retained directly on boot framebuffer 0x5c000000\n");
 +			}
  		} else {
-@@ -475,2 +484,3 @@ AppleCLCD::start(IOService *provider)
+ 			OSSafeReleaseNULL(fCons);
+ 		}
+@@ -474,6 +480,7 @@ AppleCLCD::start(IOService *provider)
+ 	registerService();
  	IOLog("SWEET FB: AppleCLCD %ux%u stride %u at 0x%llx, default surface %u, presented as %ux%u\n",
  	    fWidth, fHeight, fRowBytes, fPhys, fSurface->id, fLogicalW, fLogicalH);
 +	kprintf("SWEET FB: AppleCLCD::start() completed successfully\n");
  	return true;
+ }
+ 
 diff --git a/iokit/bsddev/IOKitBSDInit.cpp b/iokit/bsddev/IOKitBSDInit.cpp
-index 32ba71e..91ef201 100644
+index e6c74aa..b36eeb6 100644
 --- a/iokit/bsddev/IOKitBSDInit.cpp
 +++ b/iokit/bsddev/IOKitBSDInit.cpp
-@@ -656,2 +656,3 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+@@ -655,6 +655,7 @@ kern_return_t
+ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+     dev_t * root, u_int32_t * oflags )
  {
 +	kprintf("IOFindBSDRoot: entered root search\n");
  	mach_timespec_t     t;
-@@ -824,2 +825,3 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
- 				goto iofrootx;                                                                  /* Join common exit... */
+ 	IOService *         service;
+ 	IORegistryEntry *   regEntry;
+@@ -820,7 +821,7 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+ 					kdp_core_ramdisk_size = 0;
+ 				}
+ #endif
+-
 +				kprintf("IOFindBSDRoot: memory device %s ready\n", rootName);
+ 				goto iofrootx;                                                                  /* Join common exit... */
  			}
-@@ -1005,2 +1007,3 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+ 			panic("IOFindBSDRoot: specified root memory device, %s, has not been configured", rdBootVar); /* Not there */
+@@ -1003,6 +1004,7 @@ iofrootx:
+ 		}
  	}
  
 +	kprintf("IOFindBSDRoot: successfully resolved root device '%s'\n", rootName);
  	return kIOReturnSuccess;
+ }
+ 
 diff --git a/pexpert/arm/pe_identify_machine.c b/pexpert/arm/pe_identify_machine.c
-index 9e6da20..b121817 100644
+index aa75c0a..f1fd8e4 100644
 --- a/pexpert/arm/pe_identify_machine.c
 +++ b/pexpert/arm/pe_identify_machine.c
-@@ -568,3 +568,3 @@ pe_arm_init_interrupts(void *args)
+@@ -566,7 +566,7 @@ pe_arm_init_interrupts(void *args)
+ 	/* Set up mappings for interrupt controller and possibly timers (if they haven't been set up already) */
+ 	if (args != NULL) {
  		if (!pe_arm_map_interrupt_controller()) {
 -			return 0;
 +			kprintf("pe_arm_init_interrupts: AIC not present, continuing for arm64 GICv3\n");
  		}
--- 
-2.39.2
+ 	}
+ 
