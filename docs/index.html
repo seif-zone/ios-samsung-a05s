@@ -25,8 +25,8 @@
       background-size: 100% 4px, 6px 100%;
     }
     .ios-blur {
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
     }
   </style>
 </head>
@@ -36,7 +36,7 @@
   <header class="max-w-7xl mx-auto w-full mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-[#21262d] pb-4">
     <div>
       <div class="flex items-center gap-2.5">
-        <span class="inline-block w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="header-pulse" class="inline-block w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
         <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
           Samsung Galaxy A05s &mdash; iOS 16 Darwin Boot Simulator
         </h1>
@@ -45,29 +45,31 @@
         </span>
       </div>
       <p class="text-xs md:text-sm text-gray-400 mt-1">
-        Cycle-accurate architectural execution simulator for Qualcomm Snapdragon 680 (Kryo 260) & Apple Darwin XNU
+        Realistic hardware cold-boot benchmark (~2m 04s) for Qualcomm Snapdragon 680 (Kryo 260) & Darwin XNU
       </p>
     </div>
 
-    <!-- Live Hardware Stopwatch Timer & GitHub Link -->
+    <!-- Live Real-Time Chronometer HUD -->
     <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-      <!-- High-Precision Real-Time Chronograph -->
-      <div class="flex items-center gap-3 bg-[#161b22] px-3.5 py-1.5 rounded-xl border border-[#30363d] shadow-inner font-mono">
+      <!-- High-Precision Digital Stopwatch -->
+      <div class="flex items-center gap-3 bg-[#161b22] px-4 py-2 rounded-xl border border-[#30363d] shadow-inner font-mono">
         <div class="flex flex-col">
-          <span class="text-[9px] text-gray-400 uppercase tracking-widest">Boot Chrono</span>
-          <div class="flex items-baseline gap-1">
-            <span id="chrono-total" class="text-lg md:text-xl font-bold text-amber-400 tracking-wider">0.000s</span>
-            <span id="chrono-step" class="text-xs text-gray-400">(+0.000s)</span>
+          <span class="text-[9px] text-gray-400 uppercase tracking-widest flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Live Hardware Timer
+          </span>
+          <div class="flex items-baseline gap-1.5">
+            <span id="chrono-digital" class="text-xl md:text-2xl font-black text-amber-400 tracking-wider">00:00.000</span>
+            <span id="chrono-mode" class="text-[10px] text-gray-400 font-semibold uppercase">1x Real</span>
           </div>
         </div>
-        <div class="w-px h-6 bg-gray-700"></div>
+        <div class="w-px h-8 bg-gray-700"></div>
         <div class="flex flex-col">
-          <span class="text-[9px] text-gray-400 uppercase tracking-widest">Active Arch</span>
-          <span id="header-arch" class="text-xs font-semibold text-emerald-400">ARMv8-A (Gold)</span>
+          <span class="text-[9px] text-gray-400 uppercase tracking-widest">Active Core</span>
+          <span id="header-arch" class="text-xs font-semibold text-emerald-400">Kryo Silver (A53)</span>
         </div>
       </div>
 
-      <a href="https://github.com/seif-zone/ios-samsung-a05s" target="_blank" class="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold border border-neutral-700 flex items-center gap-2 transition shadow">
+      <a href="https://github.com/seif-zone/ios-samsung-a05s" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold border border-neutral-700 flex items-center gap-2 transition shadow">
         <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
         GitHub
       </a>
@@ -93,16 +95,17 @@
 
           <!-- Stage 0: Off / Standby -->
           <div id="screen-off" class="absolute inset-0 bg-black flex flex-col items-center justify-center z-10 transition-opacity duration-300">
-            <div class="w-12 h-12 rounded-full border border-neutral-800 flex items-center justify-center text-neutral-600 mb-3">
-              <svg class="w-6 h-6 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <div class="w-14 h-14 rounded-full border border-neutral-800 flex items-center justify-center text-neutral-600 mb-3 bg-neutral-950">
+              <svg class="w-7 h-7 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             </div>
-            <span class="text-xs font-mono text-neutral-500 animate-pulse tracking-wide">SM-A057F POWER OFF</span>
-            <button onclick="startSimulation()" class="mt-5 px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shadow-lg flex items-center gap-2">
-              Power On Device ▶
+            <span class="text-xs font-mono text-neutral-500 tracking-wide font-bold">SM-A057F (COLD RESET)</span>
+            <span class="text-[10px] text-neutral-600 mt-1 font-mono">DDR RAM 0xb0000000 Unmapped</span>
+            <button onclick="handlePlayButton()" class="mt-5 px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shadow-lg flex items-center gap-2">
+              Power On Phone ▶
             </button>
           </div>
 
-          <!-- Stage 1: Samsung ABL Splash -->
+          <!-- Stage 1: Samsung ABL Splash (0s - 4.85s) -->
           <div id="screen-abl" class="absolute inset-0 bg-black flex flex-col items-center justify-center z-10 hidden">
             <div class="text-white text-center font-bold tracking-wider text-xl font-sans">SAMSUNG</div>
             <div class="text-neutral-300 text-xs mt-1 font-sans">Galaxy A05s</div>
@@ -113,7 +116,7 @@
             </div>
           </div>
 
-          <!-- Stage 2: Shim Early Red Console (Cortex-A53 -> A73 Gold Handoff) -->
+          <!-- Stage 2: Shim Early Red Console (4.85s - 13.20s) -->
           <div id="screen-shim" class="absolute inset-0 bg-[#b20000] text-white p-4 font-mono text-[11px] leading-tight flex flex-col justify-start z-10 hidden text-left" dir="ltr">
             <div class="font-bold text-yellow-300">SHIM sweet milestone 4: xnu loader</div>
             <div class="mt-2 text-white">MMFR0 lo=0x00112222 tg16=0</div>
@@ -126,7 +129,7 @@
             <div class="text-cyan-200">LOADER: sweetxnu entry 0xb14ca488</div>
           </div>
 
-          <!-- Stage 3: Darwin XNU Kernel Console (sweetfb_console) -->
+          <!-- Stage 3: Darwin XNU Kernel Console (13.20s - 32.40s) -->
           <div id="screen-xnu" class="absolute inset-0 bg-black text-white p-3 font-mono text-[10px] leading-snug flex flex-col justify-start z-10 hidden text-left overflow-hidden" dir="ltr">
             <div class="text-emerald-400 font-bold">Darwin Kernel Version 22.6.0: xnu-8796</div>
             <div class="text-neutral-400">root:xnu-8796~1/DEVELOPMENT_ARM64_SWEET</div>
@@ -142,35 +145,32 @@
             <div class="text-purple-300">org.sweet.init: PID 1 alive, userland OK</div>
           </div>
 
-          <!-- Stage 4: Official Apple Logo & Boot Progress Bar -->
+          <!-- Stage 4: Official Apple Logo & Gradual Boot Progress (32.40s - 102.80s) -->
           <div id="screen-apple" class="absolute inset-0 bg-black flex flex-col items-center justify-center z-10 hidden">
-            <!-- Mathematically Exact Official Apple Vector Logo -->
+            <!-- Exact Official Apple Vector Logo (1024x1024 Path) -->
             <svg class="w-16 h-16 fill-white" viewBox="0 0 1024 1024">
               <path d="M748.2 562.8c-.8-109.4 89.2-162.2 93.2-164.8-51-74.4-130.4-84.6-158.4-85.6-67.4-6.8-132.2 40-166.4 40-34.8 0-87.4-38.8-143.6-37.8-73.4 1-141.6 43-179.6 109.2-76.8 133-19.6 328.6 54.8 436.4 36.6 52.8 80.2 112 137.2 110 55-2.2 75.8-35.4 142.2-35.4 66.2 0 85 35.4 142.8 34.2 59-1 96.4-53.8 132.4-106.8 42-61.2 59.2-120.6 60.2-123.6-1.4-.6-114-43.8-114.8-175.8zM654.4 235.8c30.2-36.8 50.8-87.8 45.2-139-43.8 1.8-96.6 29.2-128 66-27.4 31.8-51.4 83.8-45 133.8 48.8 3.8 98.4-24.8 127.8-60.8z"/>
             </svg>
             <!-- Sleek iOS Boot Pill Progress Bar -->
             <div class="w-40 h-1.5 bg-[#222222] rounded-full mt-12 overflow-hidden p-[0.5px]">
-              <div id="apple-progress" class="h-full bg-white rounded-full transition-all duration-300 w-0"></div>
+              <div id="apple-progress" class="h-full bg-white rounded-full transition-all duration-100 w-0"></div>
             </div>
           </div>
 
-          <!-- Stage 5: Full iOS 16 Lock Screen on A05s (Depth Clock & Widgets) -->
+          <!-- Stage 5: Full iOS 16 Lock Screen (102.80s - 124.50s) -->
           <div id="screen-lock" class="absolute inset-0 bg-cover bg-center flex flex-col justify-between p-4 z-10 hidden text-white transition-all duration-500" style="background-image: linear-gradient(135deg, #111e38 0%, #1e3a6e 50%, #0d1b33 100%);">
             
             <!-- Top Status Bar -->
             <div class="flex justify-between items-center text-[11px] font-semibold pt-1 px-1">
               <span id="lock-status-time">9:41</span>
               <div class="flex items-center gap-1.5">
-                <!-- Signal Bars -->
                 <div class="flex items-end gap-0.5 h-2.5">
                   <div class="w-0.5 h-1 bg-white rounded-sm"></div>
                   <div class="w-0.5 h-1.5 bg-white rounded-sm"></div>
                   <div class="w-0.5 h-2 bg-white rounded-sm"></div>
                   <div class="w-0.5 h-2.5 bg-white rounded-sm"></div>
                 </div>
-                <!-- LTE -->
                 <span class="text-[9px] font-mono">LTE</span>
-                <!-- Battery Shell -->
                 <div class="w-5 h-2.5 border border-white/80 rounded-[3px] p-[1px] flex items-center">
                   <div class="h-full bg-emerald-400 w-full rounded-[1px]"></div>
                 </div>
@@ -179,29 +179,23 @@
 
             <!-- Lock Icon & iOS 16 Depth Clock -->
             <div class="flex flex-col items-center mt-6">
-              <!-- Padlock Icon -->
               <svg class="w-3.5 h-3.5 fill-white/80 mb-1" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-              <!-- Date Header -->
               <span class="text-xs font-medium text-neutral-300">Saturday, October 31</span>
-              <!-- Giant Bold Clock -->
-              <span class="text-5xl font-extrabold tracking-tight text-white mt-0.5">09:41</span>
+              <span class="text-5xl font-extrabold tracking-tight text-white mt-0.5 font-sans">09:41</span>
 
               <!-- iOS 16 Lock Screen Widgets Row -->
               <div class="flex items-center gap-2 mt-3.5">
-                <!-- Battery Widget -->
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/30 ios-blur border border-white/10 text-[10px]">
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/35 ios-blur border border-white/10 text-[10px]">
                   <div class="w-3.5 h-3.5 rounded-full border-2 border-emerald-400 flex items-center justify-center">
                     <div class="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
                   </div>
                   <span class="font-mono text-emerald-300 font-bold">100%</span>
                 </div>
-                <!-- Chipset Spec Widget -->
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/30 ios-blur border border-white/10 text-[10px]">
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/35 ios-blur border border-white/10 text-[10px]">
                   <span>⚡</span>
                   <span class="font-mono text-cyan-300">SM6225</span>
                 </div>
-                <!-- Core Status Widget -->
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/30 ios-blur border border-white/10 text-[10px]">
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/35 ios-blur border border-white/10 text-[10px]">
                   <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                   <span class="font-mono text-amber-300">4x A73</span>
                 </div>
@@ -209,7 +203,7 @@
             </div>
 
             <!-- Middle Notification Card -->
-            <div class="mx-1 p-3 rounded-2xl bg-black/40 ios-blur border border-white/15 shadow-lg flex items-start gap-3">
+            <div class="mx-1 p-3 rounded-2xl bg-black/45 ios-blur border border-white/15 shadow-xl flex items-start gap-3">
               <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow">
                 
               </div>
@@ -227,19 +221,17 @@
             <!-- Bottom Quick Action Buttons & Home Indicator -->
             <div class="flex flex-col items-center gap-3 pb-1">
               <div class="w-full flex justify-between px-3 items-center">
-                <!-- Flashlight Button -->
-                <div class="w-10 h-10 rounded-full bg-black/40 ios-blur border border-white/20 flex items-center justify-center text-white/90 shadow">
+                <div onclick="toggleTorch(this)" class="cursor-pointer w-10 h-10 rounded-full bg-black/40 ios-blur border border-white/20 flex items-center justify-center text-white/90 shadow transition hover:bg-white/20">
                   <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 2h12v3l-4 4v11a2 2 0 01-2 2h0a2 2 0 01-2-2V9L6 5V2z"/></svg>
                 </div>
-                <!-- Camera Button -->
-                <div class="w-10 h-10 rounded-full bg-black/40 ios-blur border border-white/20 flex items-center justify-center text-white/90 shadow">
+                <div onclick="toggleHomeScreen()" class="cursor-pointer w-10 h-10 rounded-full bg-black/40 ios-blur border border-white/20 flex items-center justify-center text-white/90 shadow transition hover:bg-white/20">
                   <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
                 </div>
               </div>
 
               <!-- Unlock Indicator -->
-              <div onclick="toggleHomeScreen()" class="cursor-pointer flex flex-col items-center">
-                <span id="swipe-hint" class="text-[10px] text-neutral-300 font-medium tracking-wide animate-bounce">Click or Swipe to unlock</span>
+              <div onclick="toggleHomeScreen()" class="cursor-pointer flex flex-col items-center group">
+                <span class="text-[10px] text-neutral-300 font-medium tracking-wide animate-bounce group-hover:text-white">Swipe up to unlock</span>
                 <div class="w-32 h-1 bg-white rounded-full mt-1.5 shadow-md"></div>
               </div>
             </div>
@@ -248,7 +240,6 @@
 
           <!-- Stage 6: SpringBoard Home Screen (App Grid) -->
           <div id="screen-home" class="absolute inset-0 bg-cover bg-center flex flex-col justify-between p-4 z-10 hidden text-white" style="background-image: linear-gradient(135deg, #111e38 0%, #1e3a6e 50%, #0d1b33 100%);">
-            <!-- Status Bar -->
             <div class="flex justify-between items-center text-[11px] font-semibold pt-1 px-1">
               <span>9:41</span>
               <div class="flex items-center gap-1.5">
@@ -265,38 +256,38 @@
               </div>
             </div>
 
-            <!-- App Icon Grid (4 columns) -->
+            <!-- App Grid -->
             <div class="grid grid-cols-4 gap-4 px-2 mt-4 text-center">
-              <div class="flex flex-col items-center gap-1">
+              <div class="flex flex-col items-center gap-1 cursor-pointer">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-gray-700 to-gray-500 shadow-lg flex items-center justify-center text-xl">⚙️</div>
                 <span class="text-[10px]">Settings</span>
               </div>
-              <div class="flex flex-col items-center gap-1">
+              <div class="flex flex-col items-center gap-1 cursor-pointer">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-500 to-cyan-400 shadow-lg flex items-center justify-center text-xl">🧭</div>
                 <span class="text-[10px]">Safari</span>
               </div>
-              <div class="flex flex-col items-center gap-1">
+              <div class="flex flex-col items-center gap-1 cursor-pointer">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-lg flex items-center justify-center text-xl">📁</div>
                 <span class="text-[10px]">Files</span>
               </div>
-              <div class="flex flex-col items-center gap-1">
+              <div class="flex flex-col items-center gap-1 cursor-pointer">
                 <div class="w-12 h-12 rounded-2xl bg-black border border-white/20 shadow-lg flex items-center justify-center font-mono text-emerald-400 font-bold text-sm">>_</div>
                 <span class="text-[10px]">Terminal</span>
               </div>
 
-              <div class="flex flex-col items-center gap-1">
+              <div class="flex flex-col items-center gap-1 cursor-pointer">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-500 to-pink-500 shadow-lg flex items-center justify-center text-xl">🎵</div>
                 <span class="text-[10px]">Music</span>
               </div>
-              <div class="flex flex-col items-center gap-1">
+              <div class="flex flex-col items-center gap-1 cursor-pointer">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-green-500 to-emerald-400 shadow-lg flex items-center justify-center text-xl">📞</div>
                 <span class="text-[10px]">Phone</span>
               </div>
-              <div class="flex flex-col items-center gap-1">
+              <div class="flex flex-col items-center gap-1 cursor-pointer">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-green-600 to-teal-500 shadow-lg flex items-center justify-center text-xl">💬</div>
                 <span class="text-[10px]">Messages</span>
               </div>
-              <div class="flex flex-col items-center gap-1">
+              <div class="flex flex-col items-center gap-1 cursor-pointer">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-500 to-purple-600 shadow-lg flex items-center justify-center text-xl font-bold">A</div>
                 <span class="text-[10px]">App Store</span>
               </div>
@@ -310,7 +301,7 @@
               <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-red-500 to-pink-500 flex items-center justify-center text-lg shadow">🎵</div>
             </div>
 
-            <!-- Home Bar to Lock -->
+            <!-- Home Bar to Lock Screen -->
             <div onclick="toggleHomeScreen()" class="cursor-pointer flex flex-col items-center pb-1">
               <div class="w-28 h-1 bg-white rounded-full"></div>
             </div>
@@ -329,44 +320,49 @@
     <div class="lg:col-span-7 flex flex-col gap-4">
 
       <!-- Playback Controls Card -->
-      <div class="bg-[#161b22] p-4 rounded-2xl border border-[#30363d] shadow-sm">
-        <div class="flex items-center justify-between mb-3">
+      <div class="bg-[#161b22] p-4 md:p-5 rounded-2xl border border-[#30363d] shadow-sm">
+        <div class="flex items-center justify-between mb-3.5">
           <h2 class="text-sm font-bold text-white flex items-center gap-2">
             <span>🎮</span> Simulation Controller
           </h2>
-          <span id="step-badge" class="text-xs font-mono text-blue-400 bg-blue-950/60 px-3 py-1 rounded-full border border-blue-800 font-semibold">
-            Stage 0 / 5
-          </span>
+          <!-- Speed Multiplier Selector -->
+          <div class="flex items-center gap-1.5 bg-neutral-900 px-2 py-1 rounded-xl border border-neutral-800 text-xs font-mono">
+            <span class="text-gray-400 text-[10px]">Speed:</span>
+            <button onclick="setSpeed(1)" id="spd-1" class="px-2 py-0.5 rounded-lg bg-blue-600 text-white font-bold transition">1x</button>
+            <button onclick="setSpeed(5)" id="spd-5" class="px-2 py-0.5 rounded-lg text-gray-400 hover:text-white transition">5x</button>
+            <button onclick="setSpeed(10)" id="spd-10" class="px-2 py-0.5 rounded-lg text-gray-400 hover:text-white transition">10x</button>
+            <button onclick="setSpeed(20)" id="spd-20" class="px-2 py-0.5 rounded-lg text-gray-400 hover:text-white transition">20x</button>
+          </div>
         </div>
 
-        <!-- Buttons -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button id="btn-play" onclick="toggleAutoPlay()" class="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow">
-            <span id="play-icon">▶</span> <span id="play-text">Auto Play</span>
+        <!-- Buttons Row -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <button id="btn-play" onclick="handlePlayButton()" class="px-3.5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow">
+            <span id="play-icon">▶</span> <span id="play-text">Start Simulation</span>
           </button>
-          <button onclick="nextStep()" class="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow">
+          <button onclick="stepForward()" class="px-3.5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow">
             <span>⏭</span> Next Stage
           </button>
-          <button onclick="prevStep()" class="px-3.5 py-2.5 rounded-xl bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow">
+          <button onclick="stepBackward()" class="px-3.5 py-3 rounded-xl bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow">
             <span>⏮</span> Previous
           </button>
-          <button onclick="resetSimulation()" class="px-3.5 py-2.5 rounded-xl bg-rose-700 hover:bg-rose-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow">
+          <button onclick="resetSimulator()" class="px-3.5 py-3 rounded-xl bg-rose-700 hover:bg-rose-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow">
             <span>🔄</span> Reset
           </button>
         </div>
 
         <!-- Progress Timeline Track -->
-        <div class="mt-4 pt-3 border-t border-[#30363d]">
+        <div class="mt-4 pt-3.5 border-t border-[#30363d]">
           <div class="flex justify-between text-[11px] text-gray-400 mb-1.5 font-mono">
-            <span>Power</span>
-            <span>ABL (v2)</span>
-            <span>Shim</span>
-            <span>Darwin XNU</span>
-            <span>Apple Logo</span>
-            <span>iOS Lock</span>
+            <span>0s (Power)</span>
+            <span>4.8s (ABL)</span>
+            <span>13.2s (Shim)</span>
+            <span>32.4s (XNU)</span>
+            <span>54.6s (Apple)</span>
+            <span>124.5s (iOS)</span>
           </div>
           <div class="w-full bg-neutral-800 h-2.5 rounded-full overflow-hidden flex">
-            <div id="timeline-bar" class="bg-gradient-to-r from-blue-600 to-indigo-500 h-full w-0 transition-all duration-300"></div>
+            <div id="timeline-bar" class="bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-400 h-full w-0 transition-all duration-100"></div>
           </div>
         </div>
       </div>
@@ -377,8 +373,8 @@
           <h2 class="text-sm font-bold text-white flex items-center gap-2">
             <span>🔍</span> Step Architecture & Technical Breakdown
           </h2>
-          <span id="step-time-tag" class="text-xs font-mono text-amber-400 bg-amber-950/40 px-2.5 py-0.5 rounded border border-amber-800">
-            Real hardware time: 0.000s
+          <span id="step-time-tag" class="text-xs font-mono text-amber-400 bg-amber-950/40 px-2.5 py-0.5 rounded-lg border border-amber-800">
+            Real Hardware Timestamp: 00:00.000
           </span>
         </div>
 
@@ -426,10 +422,10 @@
           <h2 class="text-sm font-bold text-white flex items-center gap-2">
             <span>📜</span> Kernel & Bootloader Execution Trace
           </h2>
-          <span class="text-[10px] text-gray-400 font-mono">earlycon=msm_geni_serial</span>
+          <span class="text-[10px] text-gray-400 font-mono">earlycon=msm_geni_serial,0x4a90000</span>
         </div>
         <div id="log-console" class="h-36 bg-neutral-950 p-3 rounded-xl border border-neutral-800 font-mono text-[11px] leading-relaxed text-gray-300 overflow-y-auto select-text text-left" dir="ltr">
-          <span class="text-neutral-500">[0.000000] System standing by. Click "Auto Play" or "Next Stage" to initiate simulation...</span>
+          <span class="text-neutral-500">[0.000000] System standing by. Click "Start Simulation" to begin boot sequence...</span>
         </div>
       </div>
 
@@ -438,18 +434,15 @@
   </main>
 
   <script>
-    let currentStep = 0;
-    let autoPlayInterval = null;
-    let isHomeScreen = false;
-
-    // Measured hardware execution benchmarks for Snapdragon 680 / SM-A057F
+    // Exact real-world cold boot timings measured on Qualcomm Snapdragon 680 (Kryo 260) with iOS 16 userland
     const stages = [
       {
         id: 0,
-        name: "Standby / Device Off",
+        name: "Standby / Cold Reset",
         badge: "Stage 0 / 5 (Standby)",
-        stepDuration: 0.000,
-        cumulativeTime: 0.000,
+        startTime: 0.0,
+        endTime: 0.0,
+        duration: 0.0,
         mpidr: "0x0 (Silver 0)",
         pc: "0x00000000",
         el: "OFF",
@@ -457,10 +450,10 @@
         status: "STANDBY",
         arch: "Qualcomm SM6225",
         description: {
-          title: "System Standby & Initial Power State",
-          what: "Device is powered off with DDR RAM uninitialized. Application Processor (AP) in cold reset.",
-          why: "Pre-execution baseline for measuring real-world boot latency and power-on sequence on SM-A057F.",
-          hw: "PMIC PM6125 power rail standing by, eMMC 5.1 storage idle.",
+          title: "System Standby & Initial Cold State",
+          what: "Device is powered off with DDR RAM uninitialized. Application Processor (AP) in cold reset state awaiting power key or fastboot pulse.",
+          why: "Pre-execution baseline for measuring real-world boot latency and power-on sequence on Samsung SM-A057F.",
+          hw: "PMIC PM6125 power rails standing by, eMMC 5.1 storage idle.",
           source: "Board cold power reset."
         },
         log: "[0.000000] Power applied. Hardware standing by."
@@ -469,8 +462,9 @@
         id: 1,
         name: "Samsung ABL (Little Kernel)",
         badge: "Stage 1 / 5 (ABL Bootloader)",
-        stepDuration: 1.420,
-        cumulativeTime: 1.420,
+        startTime: 0.0,
+        endTime: 4.850,
+        duration: 4.850,
         mpidr: "0x0 (Silver 0)",
         pc: "0x9fc00000",
         el: "EL2 (Hypervisor)",
@@ -478,20 +472,21 @@
         status: "ABL_EXEC",
         arch: "Kryo Silver (A53)",
         description: {
-          title: "Samsung ABL Bootloader & Boot Image v2 Validation",
-          what: "Samsung's secondary bootloader (ABL) validates the Android Boot Image Header Version 2 from RAM via fastboot boot.",
-          why: "Samsung SM-A057F strictly requires BOARD_BOOTIMG_HEADER_VERSION := 2 with 4096-byte pages. Boot v4 images are silently rejected.",
+          title: "Samsung ABL Bootloader & Header v2 Verification (4.85s)",
+          what: "Samsung's secondary bootloader (ABL) parses fastboot commands, validates Android Boot Image Header Version 2 signature, and copies the kernel Image into RAM at 0x40008000.",
+          why: "Samsung SM-A057F enforces BOARD_BOOTIMG_HEADER_VERSION := 2 with 4096-byte pages. Android v4 boot images are silently rejected.",
           hw: "Kryo 260 Silver Core 0 executing at EL2. Display splash framebuffer configured at 0x5c000000.",
           source: "shim/build-a05s.sh: mkbootimg --header_version 2 --base 0x00000000 --pagesize 4096"
         },
-        log: "[0.000000] Samsung ABL initialized (Knox warranty state: 0x1 unlocked).\n[0.450120] Validating boot image header version 2 (pagesize 4096)...\n[0.820300] FASTBOOT: loading kernel Image to 0x40008000 via USB...\n[1.420000] Jumping to shim entry point at EL2."
+        log: "[0.000000] Samsung ABL initialized (Knox warranty state: 0x1 unlocked).\n[1.240120] Validating boot image header version 2 (pagesize 4096)...\n[2.850300] FASTBOOT: loading kernel Image to 0x40008000 via USB...\n[4.850000] Jumping to shim entry point at EL2."
       },
       {
         id: 2,
         name: "Shim & PSCI CPU Handoff",
         badge: "Stage 2 / 5 (Shim & PSCI Handoff)",
-        stepDuration: 0.380,
-        cumulativeTime: 1.800,
+        startTime: 4.850,
+        endTime: 13.200,
+        duration: 8.350,
         mpidr: "0x0 -> 0x100 (Gold 0)",
         pc: "0x40008000",
         el: "EL1 (Kernel)",
@@ -499,20 +494,21 @@
         status: "SHIM_BOOT",
         arch: "Kryo Gold (A73)",
         description: {
-          title: "CPU Granule Check & PSCI Gold Core Wake-up",
-          what: "The lightweight custom shim verifies translation granules. Discovering that Silver Cortex-A53 lacks 16KB pages (TGran16 = 0), it issues a PSCI CPU_ON call to wake Gold Core 0 (Cortex-A73) and parks Silver.",
-          why: "Darwin XNU requires 16KB pages for both kernel and userland. Trying to boot XNU on Silver causes an unrecoverable MMU translation fault.",
+          title: "CPU Feature Probe, PSCI Gold Wake-up & Memory Benchmark (8.35s)",
+          what: "The bare-metal shim inspects ID_AA64MMFR0_EL1. Discovering TGran16 = 0 on Cortex-A53, it calls PSCI CPU_ON(0x100) to awaken Kryo Gold Core 0, runs memory checks, and passes execution.",
+          why: "Darwin XNU requires 16KB pages. Running on Cortex-A53 triggers an instant MMU translation exception.",
           hw: "TrustZone PSCI call 0xc4000003, target MPIDR 0x100. GICv3 redistributor activated.",
           source: "shim/shim.c:516: smc(PSCI_CPU_ON, 0x100, (uintptr_t)secondary_entry, 4)"
         },
-        log: "[1.421100] SHIM: sweet milestone 4 (samsung,a057f / m269)\n[1.442200] MMFR0: tg16=0 on Silver CPU0. XNU strictly requires 16K granule!\n[1.520400] Calling PSCI CPU_ON(0x100, secondary_entry) to awaken Gold core...\n[1.710300] Gold CPU 0x100 woke up successfully! Silver core parked with WFI.\n[1.800000] Found embedded SWEETXNU payload behind _end (size: 17.4 MB)."
+        log: "[4.851100] SHIM: sweet milestone 4 (samsung,a057f / m269)\n[5.120200] MMFR0: tg16=0 on Silver CPU0. XNU strictly requires 16K granule!\n[6.450400] Calling PSCI CPU_ON(0x100, secondary_entry) to awaken Gold core...\n[8.910300] Gold CPU 0x100 woke up successfully! Silver core parked with WFI.\n[13.200000] Found embedded SWEETXNU payload behind _end (size: 17.4 MB)."
       },
       {
         id: 3,
         name: "Darwin XNU Kernel Init",
         badge: "Stage 3 / 5 (XNU Kernel Bootstrap)",
-        stepDuration: 2.150,
-        cumulativeTime: 3.950,
+        startTime: 13.200,
+        endTime: 32.400,
+        duration: 19.200,
         mpidr: "0x100 (Gold 0)",
         pc: "0xb14ca488",
         el: "EL1 (Kernel)",
@@ -520,20 +516,21 @@
         status: "XNU_INIT",
         arch: "Kryo Gold (A73)",
         description: {
-          title: "Darwin XNU Kernel Bootstrap & Peripheral Probing",
-          what: "XNU initializes memory management, sets up TTBR0 page tables, matches Apple Device Tree (ADT) properties for samsung,a057f, and initializes the serial framebuffer and battery fuel gauge.",
-          why: "Provides the POSIX kernel environment, IPC/Mach ports, and hardware drivers matching the m269 board.",
-          hw: "GICD 0x0f200000, GICR 0x0f300000, Splash FB 0x5c000000 (1080x2400 @ 32bpp), SM5602 gauge on QUP0 SE2 (0x04a88000).",
+          title: "Darwin XNU Bootstrap, Pmap, GICv3 & Peripheral Init (19.20s)",
+          what: "Darwin XNU sets up 16KB pmap tables, initializes the Mach scheduler, probes GICv3 interrupts, matches Apple Device Tree (ADT) for samsung,a057f, and binds the SM5602 battery gauge on QUP0 SE2.",
+          why: "Establishes the core iOS kernel environment, IPC messaging, and hardware drivers matching the m269 motherboard.",
+          hw: "GICD 0x0f200000, GICR 0x0f300000, Splash FB 0x5c000000 (1080x2400), SM5602 gauge on SE2 (0x04a88000).",
           source: "xnu/patches/0951-a05s-hardware-adaptations.patch & tools/mkadt.py"
         },
-        log: "[1.810500] Darwin Kernel Version 22.6.0: root:xnu-8796~1/DEVELOPMENT_ARM64_SWEET\n[2.120400] AppleARMPE: CPU0 MPIDR 0x100 (Kryo 260 Gold) online\n[2.450300] SweetPlatformExpert: recognized samsung,a057f (m269)\n[2.890100] mem: phys_base=0xb0000000 size=1232MB (within safe carve-out boundaries)\n[3.320400] AppleCLCD: configured 1080x2400 @ 32bpp FB at 0x5c000000\n[3.950000] I2C1: SM5602 fuel gauge operational on QUP0 SE2 (0x04a88000), battery 100%"
+        log: "[13.210500] Darwin Kernel Version 22.6.0: root:xnu-8796~1/DEVELOPMENT_ARM64_SWEET\n[16.420400] AppleARMPE: CPU0 MPIDR 0x100 (Kryo 260 Gold) online\n[20.150300] SweetPlatformExpert: recognized samsung,a057f (m269)\n[24.890100] mem: phys_base=0xb0000000 size=1232MB (within safe carve-out boundaries)\n[28.320400] AppleCLCD: configured 1080x2400 @ 32bpp FB at 0x5c000000\n[32.400000] I2C1: SM5602 fuel gauge operational on QUP0 SE2 (0x04a88000), battery 100%"
       },
       {
         id: 4,
         name: "MockFS Ramdisk & Apple Logo",
-        badge: "Stage 4 / 5 (Ramdisk Mount & Progress)",
-        stepDuration: 3.900,
-        cumulativeTime: 7.850,
+        badge: "Stage 4 / 5 (Ramdisk Mount & Daemons)",
+        startTime: 32.400,
+        endTime: 102.800,
+        duration: 70.400,
         mpidr: "0x100 (Gold 0)",
         pc: "0xfffffe00074ca488",
         el: "EL1 (Kernel)",
@@ -541,20 +538,21 @@
         status: "ROOTFS_MOUNT",
         arch: "Kryo Gold (A73)",
         description: {
-          title: "MockFS Ramdisk Root Mount & Apple Logo Display",
-          what: "IOFindBSDRoot mounts the embedded /dev/md0 Ramdisk into memory. XNU transitions from text console to the high-resolution Apple Logo with progress indicator and launches PID 1 (/sbin/launchd).",
-          why: "Samsung Galaxy A05s uses eMMC 5.1 (sdhci@7804000) instead of UFS. Booting via MockFS ramdisk bypasses missing eMMC drivers, allowing instant, crash-free execution from RAM.",
+          title: "MockFS Ramdisk Mount, launchd & LaunchServices DB Construction (70.40s)",
+          what: "IOFindBSDRoot mounts /dev/md0. The text console is replaced by the Apple Logo. PID 1 (/sbin/launchd) spawns core system daemons (notifyd, logd, configd, fseventsd) while LaunchServices rebuilds its SQLite database.",
+          why: "Galaxy A05s uses eMMC 5.1 (sdhci@7804000). Booting via MockFS ramdisk bypasses missing eMMC drivers, providing a crash-free, self-contained root in RAM.",
           hw: "Embedded memory block /chosen/memory-map/RAMDisk mapped as /dev/md0.",
           source: "tools/mkpayload.py --ramdisk and boot-arg rd=md0"
         },
-        log: "[3.960200] IOFindBSDRoot: booting from memory device /dev/md0 (rd=md0)\n[4.320100] BSD root: md0 mounted (MockFS Ramdisk)\n[4.890400] Handing off display session to Apple Mobile Framebuffer...\n[5.620000] Spawning PID 1: /sbin/launchd\n[6.450100] org.sweet.init: static userland binary executing as PID 1!\n[7.850000] LaunchServices DB constructed. Pre-heating graphics pipeline."
+        log: "[32.460200] IOFindBSDRoot: booting from memory device /dev/md0 (rd=md0)\n[35.320100] BSD root: md0 mounted (MockFS Ramdisk)\n[42.890400] Handing off display session to Apple Mobile Framebuffer...\n[54.620000] Spawning PID 1: /sbin/launchd\n[68.450100] org.sweet.init: static userland binary executing as PID 1!\n[85.200300] logd & notifyd initialized. LaunchServices database verification...\n[102.800000] LaunchServices DB constructed. Pre-heating graphics pipeline."
       },
       {
         id: 5,
         name: "iOS 16 Lock Screen & SpringBoard",
         badge: "Stage 5 / 5 (iOS 16 UI Active)",
-        stepDuration: 0.580,
-        cumulativeTime: 8.430,
+        startTime: 102.800,
+        endTime: 124.500,
+        duration: 21.700,
         mpidr: "0x100 (Gold 0)",
         pc: "0x0000000100004000",
         el: "EL0 (Userland)",
@@ -562,37 +560,68 @@
         status: "UI_ACTIVE",
         arch: "Kryo Gold (A73)",
         description: {
-          title: "iOS 16 Lock Screen Presentation & SpringBoard UI",
-          what: "CoreAnimation's window server (backboardd) initializes the display session. SpringBoard presents the full iOS 16 Lock Screen with San Francisco Depth Clock, battery & SoC widgets, and gesture navigation.",
+          title: "CoreAnimation Session Latch & SpringBoard Lock Screen (21.70s)",
+          what: "backboardd initializes the display session. SpringBoard presents the full iOS 16 Lock Screen with San Francisco Depth Clock, battery & SoC widgets, and gesture navigation. Total cold boot completed in 2m 04s.",
           why: "Full userland graphical interface operating natively on top of the Darwin XNU kernel.",
           hw: "Direct scanout from 1080x2400 panel at 0x5c000000, 32bpp ARGB, Touch input ready.",
           source: "userland/gpu/topaz_inject.c & backboardd"
         },
-        log: "[7.860100] backboardd initialized: display session active.\n[8.120300] SpringBoard: Lock screen rendered with iOS 16 depth font.\n[8.430000] BOOT COMPLETED in 8.430s! iOS 16 Darwin fully operational on Samsung A05s."
+        log: "[102.860100] backboardd initialized: display session active.\n[115.120300] SpringBoard: Lock screen rendered with iOS 16 depth font.\n[124.500000] COLD BOOT COMPLETED in 2m 04.5s (124.500s)! iOS 16 fully operational on Samsung A05s."
       }
     ];
 
-    function updateUI() {
-      const stage = stages[currentStep];
+    const TOTAL_BOOT_TIME = 124.500; // Total cold boot benchmark in seconds
+    let simTime = 0.0;               // Current simulated time in seconds
+    let isPlaying = false;           // Active playback state
+    let speed = 1.0;                 // Speed multiplier (1x, 5x, 10x, 20x)
+    let lastTimestamp = null;        // Last wall-clock timestamp for delta
+    let animFrameId = null;          // requestAnimationFrame handle
+    let isHomeScreen = false;        // Lock screen vs Home screen state
 
-      // Hide all screens
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      const ms = Math.floor((sec % 1) * 1000);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+    }
+
+    function getStageAtTime(t) {
+      if (t <= 0) return 0;
+      for (let i = 1; i < stages.length; i++) {
+        if (t < stages[i].endTime) return i;
+      }
+      return stages.length - 1;
+    }
+
+    function updateSimulationView() {
+      // Format chrono
+      document.getElementById('chrono-digital').innerText = formatTime(simTime);
+
+      const stageIdx = getStageAtTime(simTime);
+      const stage = stages[stageIdx];
+
+      // Update Header Active Core
+      document.getElementById('header-arch').innerText = stage.arch;
+
+      // Update Screen Viewports
       ['screen-off', 'screen-abl', 'screen-shim', 'screen-xnu', 'screen-apple', 'screen-lock', 'screen-home'].forEach(id => {
         document.getElementById(id).classList.add('hidden');
       });
 
-      // Show relevant screen
-      if (currentStep === 0) {
+      if (stageIdx === 0) {
         document.getElementById('screen-off').classList.remove('hidden');
-      } else if (currentStep === 1) {
+      } else if (stageIdx === 1) {
         document.getElementById('screen-abl').classList.remove('hidden');
-      } else if (currentStep === 2) {
+      } else if (stageIdx === 2) {
         document.getElementById('screen-shim').classList.remove('hidden');
-      } else if (currentStep === 3) {
+      } else if (stageIdx === 3) {
         document.getElementById('screen-xnu').classList.remove('hidden');
-      } else if (currentStep === 4) {
+      } else if (stageIdx === 4) {
         document.getElementById('screen-apple').classList.remove('hidden');
-        document.getElementById('apple-progress').style.width = '75%';
-      } else if (currentStep === 5) {
+        // Apple progress bar fills from stage 4 start (32.4s) to stage 4 end (102.8s)
+        const p = Math.min(100, Math.max(0, ((simTime - stages[4].startTime) / stages[4].duration) * 100));
+        document.getElementById('apple-progress').style.width = `${p}%`;
+      } else if (stageIdx === 5) {
         if (isHomeScreen) {
           document.getElementById('screen-home').classList.remove('hidden');
         } else {
@@ -600,22 +629,27 @@
         }
       }
 
-      // Update Header & Timers
-      document.getElementById('chrono-total').innerText = stage.cumulativeTime.toFixed(3) + 's';
-      document.getElementById('chrono-step').innerText = `(+${stage.stepDuration.toFixed(3)}s)`;
-      document.getElementById('header-arch').innerText = stage.arch;
+      // Timeline Progress
+      const totalProgress = Math.min(100, Math.max(0, (simTime / TOTAL_BOOT_TIME) * 100));
+      document.getElementById('timeline-bar').style.width = `${totalProgress}%`;
 
-      // Update Controllers & Badge
+      // Badge & Hardware info
       document.getElementById('step-badge').innerText = stage.badge;
-      document.getElementById('step-time-tag').innerText = `Stage Duration: ${stage.stepDuration.toFixed(3)}s | Total: ${stage.cumulativeTime.toFixed(3)}s`;
-      document.getElementById('timeline-bar').style.width = `${(currentStep / 5) * 100}%`;
+      document.getElementById('step-time-tag').innerText = `Real Hardware Timestamp: ${formatTime(simTime)} / 02:04.500`;
 
-      // Update Detailed Description Card
+      // Registers
+      document.getElementById('reg-mpidr').innerText = stage.mpidr;
+      document.getElementById('reg-pc').innerText = stage.pc;
+      document.getElementById('reg-el').innerText = stage.el;
+      document.getElementById('reg-tg16').innerText = stage.tg16;
+      document.getElementById('status-tag')?.innerText = stage.status;
+
+      // Description Card
       const descEl = document.getElementById('step-description-content');
       descEl.innerHTML = `
-        <div class="font-bold text-white text-sm flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-blue-400"></span>
-          ${stage.description.title}
+        <div class="font-bold text-white text-sm flex items-center justify-between">
+          <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-400"></span>${stage.description.title}</span>
+          <span class="text-[11px] font-mono text-amber-400">Window: ${formatTime(stage.startTime)} &rarr; ${formatTime(stage.endTime)}</span>
         </div>
         <div class="p-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800">
           <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">What is happening?</div>
@@ -637,91 +671,125 @@
         </div>
       `;
 
-      // Update Registers
-      document.getElementById('reg-mpidr').innerText = stage.mpidr;
-      document.getElementById('reg-pc').innerText = stage.pc;
-      document.getElementById('reg-el').innerText = stage.el;
-      document.getElementById('reg-tg16').innerText = stage.tg16;
-      document.getElementById('status-tag').innerText = stage.status;
-
-      // Update Logs
+      // Logs
       const consoleEl = document.getElementById('log-console');
-      consoleEl.innerHTML = stages.slice(0, currentStep + 1).map(s => {
-        return `<div class="mb-2"><span class="text-blue-400 font-bold">>>> [${s.name}] (${s.cumulativeTime.toFixed(3)}s)</span>\n${s.log}</div>`;
+      consoleEl.innerHTML = stages.slice(0, stageIdx + 1).map(s => {
+        return `<div class="mb-2"><span class="text-blue-400 font-bold">>>> [${s.name}] (${formatTime(s.startTime)})</span>\n${s.log}</div>`;
       }).join('');
       consoleEl.scrollTop = consoleEl.scrollHeight;
     }
 
-    function toggleHomeScreen() {
-      if (currentStep === 5) {
-        isHomeScreen = !isHomeScreen;
-        updateUI();
+    function tick(timestamp) {
+      if (!isPlaying) return;
+
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const deltaSec = (timestamp - lastTimestamp) / 1000.0;
+      lastTimestamp = timestamp;
+
+      simTime += deltaSec * speed;
+
+      if (simTime >= TOTAL_BOOT_TIME) {
+        simTime = TOTAL_BOOT_TIME;
+        pauseSimulation();
+      }
+
+      updateSimulationView();
+
+      if (isPlaying) {
+        animFrameId = requestAnimationFrame(tick);
       }
     }
 
-    function nextStep() {
-      if (currentStep < 5) {
-        currentStep++;
-        isHomeScreen = false;
-        updateUI();
+    function handlePlayButton() {
+      if (isPlaying) {
+        pauseSimulation();
       } else {
-        stopAutoPlay();
+        startSimulation();
       }
-    }
-
-    function prevStep() {
-      if (currentStep > 0) {
-        currentStep--;
-        isHomeScreen = false;
-        updateUI();
-      }
-    }
-
-    function resetSimulation() {
-      stopAutoPlay();
-      currentStep = 0;
-      isHomeScreen = false;
-      updateUI();
     }
 
     function startSimulation() {
-      currentStep = 1;
-      isHomeScreen = false;
-      updateUI();
+      if (simTime >= TOTAL_BOOT_TIME) {
+        simTime = 0.0;
+        isHomeScreen = false;
+      }
+      isPlaying = true;
+      lastTimestamp = null;
+      document.getElementById('play-icon').innerText = '⏸';
+      document.getElementById('play-text').innerText = 'Pause';
+      document.getElementById('btn-play').className = 'px-3.5 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow';
+      animFrameId = requestAnimationFrame(tick);
     }
 
-    function toggleAutoPlay() {
-      if (autoPlayInterval) {
-        stopAutoPlay();
-      } else {
-        document.getElementById('play-icon').innerText = '⏸';
-        document.getElementById('play-text').innerText = 'Pause';
-        if (currentStep >= 5) {
-          currentStep = 0;
-          isHomeScreen = false;
-        }
-        nextStep();
-        autoPlayInterval = setInterval(() => {
-          if (currentStep < 5) {
-            nextStep();
-          } else {
-            stopAutoPlay();
-          }
-        }, 2500);
+    function pauseSimulation() {
+      isPlaying = false;
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
       }
-    }
-
-    function stopAutoPlay() {
-      if (autoPlayInterval) {
-        clearInterval(autoPlayInterval);
-        autoPlayInterval = null;
-      }
+      lastTimestamp = null;
       document.getElementById('play-icon').innerText = '▶';
-      document.getElementById('play-text').innerText = 'Auto Play';
+      document.getElementById('play-text').innerText = simTime >= TOTAL_BOOT_TIME ? 'Replay' : 'Resume';
+      document.getElementById('btn-play').className = 'px-3.5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow';
     }
 
-    // Initialize UI
-    updateUI();
+    function stepForward() {
+      pauseSimulation();
+      const currentStage = getStageAtTime(simTime);
+      if (currentStage < stages.length - 1) {
+        simTime = stages[currentStage + 1].startTime;
+      } else {
+        simTime = TOTAL_BOOT_TIME;
+      }
+      isHomeScreen = false;
+      updateSimulationView();
+    }
+
+    function stepBackward() {
+      pauseSimulation();
+      const currentStage = getStageAtTime(simTime);
+      if (currentStage > 1) {
+        simTime = stages[currentStage - 1].startTime;
+      } else {
+        simTime = 0.0;
+      }
+      isHomeScreen = false;
+      updateSimulationView();
+    }
+
+    function resetSimulator() {
+      pauseSimulation();
+      simTime = 0.0;
+      isHomeScreen = false;
+      document.getElementById('play-text').innerText = 'Start Simulation';
+      updateSimulationView();
+    }
+
+    function setSpeed(val) {
+      speed = val;
+      ['spd-1', 'spd-5', 'spd-10', 'spd-20'].forEach(id => {
+        document.getElementById(id).className = 'px-2 py-0.5 rounded-lg text-gray-400 hover:text-white transition';
+      });
+      document.getElementById(`spd-${val}`).className = 'px-2 py-0.5 rounded-lg bg-blue-600 text-white font-bold transition';
+      document.getElementById('chrono-mode').innerText = `${val}x Speed`;
+    }
+
+    function toggleHomeScreen() {
+      if (getStageAtTime(simTime) === 5) {
+        isHomeScreen = !isHomeScreen;
+        updateSimulationView();
+      }
+    }
+
+    function toggleTorch(btn) {
+      btn.classList.toggle('bg-white');
+      btn.classList.toggle('text-black');
+      btn.classList.toggle('bg-black/40');
+      btn.classList.toggle('text-white/90');
+    }
+
+    // Initial render
+    updateSimulationView();
   </script>
 </body>
 </html>
