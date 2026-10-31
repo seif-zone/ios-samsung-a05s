@@ -5,6 +5,15 @@
 #include "console.h"
 #include "font.h"
 
+int strcmp(const char *s1, const char *s2)
+{
+	while (*s1 && (*s1 == *s2)) {
+		s1++;
+		s2++;
+	}
+	return *(const unsigned char *)s1 - *(const unsigned char *)s2;
+}
+
 #define SCALE		3
 #define CH_W		(8 * SCALE)
 #define CH_H		(16 * SCALE)
