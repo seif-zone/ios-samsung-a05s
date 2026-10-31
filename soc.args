@@ -1,0 +1,39 @@
+# soc.args: Qualcomm Snapdragon 680 (SM6225 / Bengal) SoC Memory & Register Coordinates
+# Board: Samsung Galaxy A05s (SM-A057F / m269)
+# Reference: https://hackios-web.vercel.app/en/docs/devices/redwood & m269 devicetree
+
+# Memory Carve-out & Kernel Physical Boundaries
+soc_dram_base=0xb0000000
+soc_dram_size=0x4d000000
+
+# Interrupt Controllers (ARM GICv3)
+soc_gicd=0x0f200000
+soc_gicr=0x0f300000
+
+# Console & Serial UART
+soc_uart_base=0x04a90000
+
+# I2C & Serial Engines (QUPv3)
+soc_qup0_se2=0x04a88000
+soc_qup0_se1=0x04a84000
+
+# Splash Display & Framebuffer
+soc_fb_base=0x5c000000
+soc_fb_size=0x00f00000
+soc_fb_width=1080
+soc_fb_height=2400
+soc_fb_depth=32
+
+# Storage Subsystem (eMMC 5.1 Controller)
+soc_sdhci_base=0x07804000
+
+# Shared Memory & System Management
+soc_smem=0x80900000
+soc_imem=0x14600000
+soc_aoss=0x0c300000
+soc_apps_smmu=0x01500000
+
+# CPU Core Topology & PSCI Wake Target
+soc_boot_cpu=0x100
+soc_silver_cpu0=0x0
+soc_psci_cpu_on=0xc4000003

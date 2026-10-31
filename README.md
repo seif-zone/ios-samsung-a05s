@@ -6,7 +6,7 @@ This is a port of Apple's open-source XNU kernel (`xnu-8796`, iOS 16 era) and us
 
 Ported and maintained by **Seif** ([@seif-zone](https://github.com/seif-zone)).
 
-Built upon the pioneering Qualcomm bring-up work of [ios-topaz](https://github.com/dipa-studio) and [dipa-studio/ios-sweet](https://github.com/dipa-studio/ios-sweet) (Redmi Note 10 Pro / Redmi Note 12 4G), with GPU & audio infrastructure derived from [HackiOS](https://github.com/oosexgang/hackios-xnu-kernel) by OOSEX GANG.
+Built upon the pioneering Qualcomm bring-up work of [ios-topaz](https://github.com/dipa-studio) and [dipa-studio/ios-sweet](https://github.com/dipa-studio/ios-sweet) (Redmi Note 10 Pro / Redmi Note 12 4G), and aligned with the [HakiOS project](https://hackios-web.vercel.app/en) by [OOSEX GANG](https://github.com/oosexgang/hakios-xnu-kernel).
 
 > **Notice:** Experimental low-level bring-up. Many peripheral drivers are stubbed or in progress. This project runs entirely out of RAM or dedicated partitions; the kernel is loaded over USB via `fastboot boot` without writing or bricking stock boot partitions.
 
@@ -18,13 +18,32 @@ Built upon the pioneering Qualcomm bring-up work of [ios-topaz](https://github.c
 | :--- | :--- | :--- |
 | **Bootloader** | Working | Stock Samsung ABL (unlocked) &rarr; `fastboot boot` of `a05s-boot.img` (Header Version 2) &rarr; `shim` &rarr; XNU. |
 | **CPU (SMP)** | Working | 4&times; Kryo 260 Gold (Cortex-A73, MPIDR `0x100`..`0x103`), 16K pages, GICv3, ARM generic timers. Silver cores parked (see below). |
-| **Memory** | Working | RAM base `0x40000000`, 4 GiB / 6 GiB LPDDR4X support. All reserved carve-outs (Modem, ADSP, CDSP, Splash) protected below `0x63900000`. |
+| **Memory** | Working | RAM base `0xb0000000`, 4 GiB / 6 GiB LPDDR4X support. All reserved carve-outs (Modem, ADSP, CDSP, Splash) protected below `0x63900000`. |
 | **Display** | Working | PLS LCD (1080&times;2400). Scans out from the continuous splash buffer at `0x5C000000` (15 MB carveout, stride 4320). Handed to iOS as iPhone X canvas (`1125x2436`). |
+| **GPU / Metal** | Partial | Adreno 610 (a6xx). PM4 packet generator and `hakios-metal` blit encoder pipeline integrated under `userland/metal/`. |
 | **Battery / Gauge** | Working | Silicon Mitus SM5602 fuel gauge (`0x71`) routed through Qualcomm QUP0 SE2 (`0x04a88000`) on GPIO 6/7 (patch `0951`). |
 | **Storage / RootFS** | Working | eMMC 5.1 (`sdhci@7804000`). Boots cleanly via embedded **MockFS / Ramdisk (`rd=md0`)** inside payload, bypassing missing UFS controllers. |
 | **Touchscreen** | In progress | Chipone TDDI / Ilitek on `qupv3_se0_spi` (`0x04a80000`), Reset = GPIO 86, IRQ = GPIO 80 on TLMM WEST tile. |
 | **Keys** | In progress | PMIC PM6125 power key and volume keys via TLMM GPIOs. |
 | **Identity** | Working | Reported as iPhone X (`iPhone10,3` / `D22AP`) with gesture UI and modern SpringBoard layout. |
+
+---
+
+## HakiOS Ecosystem Alignment
+
+This project is structured in full alignment with the [HakiOS project](https://hackios-web.vercel.app/en):
+- **Upstream Kernel:** [`oosexgang/hakios-xnu-kernel`](https://github.com/oosexgang/hakios-xnu-kernel)
+- **Reference Device:** [`oosexgang/hakios-sm7325`](https://github.com/oosexgang/hakios-sm7325) (POCO X5 Pro 5G)
+- **UEFI Bootloader:** [`oosexgang/hakios-uefi`](https://github.com/oosexgang/hakios-uefi)
+- **Metal Driver:** [`oosexgang/hakios-metal`](https://github.com/oosexgang/hakios-metal)
+- **Full Compatibility Guide:** See [HAKIOS.md](HAKIOS.md) for deep architectural comparisons.
+
+### Standard Device Files
+- [`device.conf`](device.conf): Formal device definition and component status table following HakiOS standards.
+- [`soc.args`](soc.args): Hardware register coordinates for Qualcomm Snapdragon 680 (SM6225).
+- [`configs/a057f.config`](configs/a057f.config): Driver switches and boot arguments.
+- [`pull-firmware.sh`](pull-firmware.sh): Isolated ADB extraction of Adreno 610 zap shader and firmware into gitignored `fw-*/`.
+- [`userland/metal/`](userland/metal/): Adreno 610 Metal PM4 command buffer builder and verification probe (`a05s_metal_probe.cpp`).
 
 ---
 
@@ -96,16 +115,14 @@ bash shim/build-a05s.sh out/a05s.payload
 
 ## Boot Simulation & Pre-Flight Verifier
 
-An interactive simulation and offline verification suite are included to test payload math, physical memory coordinates, and execution flow before touching real hardware:
-
 ### 1. Offline Pre-Flight Verifier
 Run the standalone pre-flight script to parse the payload and ADT, verifying entry points, memory carveouts, and PSCI handoffs:
-`sh
+```sh
 python3 tools/sim-preflight.py out/a05s.payload out/a05s.adt
-`
+```
 
 ### 2. Interactive Boot Simulator (Web UI)
-An interactive simulation engine is available in docs/index.html (viewable directly in your browser or deployed via GitHub Pages), simulating the transition from Samsung ABL to shim on Silver core, PSCI wake-up of Gold CPU 0, Darwin XNU kernel initialization, MockFS Ramdisk mount, and SpringBoard handoff on an accurate model of the Samsung Galaxy A05s.
+An interactive simulation engine is available in `docs/index.html` (viewable directly in your browser or deployed via GitHub Pages), simulating the transition from Samsung ABL to shim on Silver core, PSCI wake-up of Gold CPU 0, Darwin XNU kernel initialization, MockFS Ramdisk mount, and SpringBoard handoff on an accurate model of the Samsung Galaxy A05s.
 
 ---
 
@@ -130,6 +147,11 @@ An interactive simulation engine is available in docs/index.html (viewable direc
 
 ```
 ├── .github/workflows/    # Automated CI/CD kernel compilation pipelines
+├── configs/              # HakiOS driver configurations (a057f.config)
+├── device.conf           # HakiOS device metadata & component status
+├── soc.args              # Snapdragon 680 (SM6225) register coordinates
+├── pull-firmware.sh      # Isolated ADB firmware extractor
+├── HAKIOS.md             # In-depth HakiOS integration & compatibility guide
 ├── shim/                 # Bare-metal A05s boot shim, Gold CPU PSCI handoff, GICv3 setup
 │   ├── build-a05s.sh     # Samsung Boot Header v2 packaging pipeline
 │   ├── shim.c            # Core CPU & MMU initialization
@@ -140,6 +162,7 @@ An interactive simulation engine is available in docs/index.html (viewable direc
 │   ├── mkinit.py         # Static ad-hoc signed Mach-O init wrapper
 │   └── sweet-init.S      # Standalone PID 1 early userspace verification
 ├── userland/             # GPU injection, EAGL shim, and audio HAL plugins
+│   └── metal/            # Adreno 610 Metal PM4 command buffer builder & probe
 └── xnu/patches/          # Patch series applied cleanly to Apple XNU 8796 tree
     ├── 0080-0082         # SM6225 architecture and Gold CPU topology
     └── 0951              # Samsung A05s SM5602 gauge on SE2 (GPIO 6/7)
@@ -149,9 +172,9 @@ An interactive simulation engine is available in docs/index.html (viewable direc
 
 ## Credits and Acknowledgments
 
-- **Lead Developer & Maintainer:** **Seif** ([@seif-zone](https://github.com/seif-zone)) &ndash; Samsung Galaxy A05s port, Samsung ABL Header v2 packaging, Longcheer `m269` devicetree & register mapping, SM5602 SE2 adaptations, eMMC MockFS integration.
+- **Lead Developer & Maintainer:** **Seif** ([@seif-zone](https://github.com/seif-zone)) &ndash; Samsung Galaxy A05s port, Samsung ABL Header v2 packaging, Longcheer `m269` devicetree & register mapping, SM5602 SE2 adaptations, eMMC MockFS integration, HakiOS alignment.
+- **HakiOS Team:** [OOSEX GANG](https://github.com/oosexgang/hakios-xnu-kernel) &ndash; HakiOS architecture, drivers configuration standard, `hakios-metal` Adreno Metal command pipeline, and `hakios-sm7325` reference bring-up.
 - **ios-topaz & ios-sweet teams:** [dipa-studio](https://github.com/dipa-studio/ios-sweet) &ndash; Qualcomm SM6225 architecture foundation, Cortex-A53 PFZ atomics emulation, PSCI Gold CPU wake-up handoff.
-- **HackiOS:** [OOSEX GANG](https://github.com/oosexgang/hackios-xnu-kernel) &ndash; GPU (Adreno / Mesa freedreno), display presentation, RedwoodAudio HAL.
 - **blacktop:** [darwin-xnu-build](https://github.com/blacktop/darwin-xnu-build) &ndash; Automated XNU compilation harness.
 - **Apple Inc.:** Darwin XNU Kernel releases (APSL 2.0).
 

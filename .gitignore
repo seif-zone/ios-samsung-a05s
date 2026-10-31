@@ -2,9 +2,18 @@
 backup/
 dtb/
 recovery/
+# vendor firmware pulled from device (HakiOS isolation rule)
+fw-*/
+prebuilt/
 # third-party/Apple sources fetched for reading
 research/
 shim/out/
 xnu/out/
 xnu/out-*/
+out/
 __pycache__/
+*.o
+*.a
+*.so
+*.dylib
+*.pyc

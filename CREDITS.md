@@ -9,23 +9,27 @@
   - Silicon Mitus SM5602 battery fuel gauge adaptation on QUP0 SE2 (`0x04a88000`) on GPIO 6/7 (TLMM WEST tile).
   - eMMC 5.1 storage bypass via embedded MockFS / Ramdisk (`rd=md0`) payload bootstrap.
   - Apple Device Tree (ADT) hardware definition for `samsung,a05s` and `samsung,m269`.
+  - HakiOS ecosystem integration, `device.conf`, `soc.args`, and Adreno 610 Metal PM4 command driver integration.
 
 ---
 
 ## Upstream Projects and Core Contributors
 
-### HackiOS (OOSEX GANG)
+### HakiOS (OOSEX GANG)
 
-Much of the GPU, display presentation, audio, Wi-Fi glue and sandbox infrastructure originates from **HackiOS**, which boots XNU and iOS 16 user space on the POCO X5 Pro (`redwood`):
+Much of the core XNU driver architecture, display presentation, audio, Wi-Fi glue, sandbox infrastructure, and Metal GPU acceleration originates from **HakiOS**, which boots XNU and iOS 16 user space on Qualcomm Android phones:
 
-- **Kernel:** <https://github.com/oosexgang/hackios-xnu-kernel> &ndash; Apple Public Source License 2.0
-- **User space:** <https://github.com/oosexgang/hackios-xnu-userland> &ndash; MIT License, Copyright (c) 2026 OOSEX GANG
+- **Documentation:** <https://hackios-web.vercel.app/en>
+- **Kernel & Drivers:** <https://github.com/oosexgang/hakios-xnu-kernel> &ndash; Apple Public Source License 2.0
+- **POCO X5 Pro (redwood):** <https://github.com/oosexgang/hakios-sm7325>
+- **UEFI Firmware:** <https://github.com/oosexgang/hakios-uefi> &ndash; Mu-Silicium (BSD-2-Clause-Patent)
+- **Metal Acceleration Driver:** <https://github.com/oosexgang/hakios-metal> &ndash; MIT License, Copyright (c) 2026 OOSEX GANG
 
-#### Kernel patches derived from HackiOS (APSL 2.0)
+#### Kernel patches derived from HakiOS (APSL 2.0)
 `xnu/patches/0900-*` and `0901-*` through `0947-*` contain, adapted and modified: `RedwoodGPU.cpp` (msm-style GPU client), `MiniIOMobileFramebuffer` presentation pipeline (SwapEnd handed to presenter thread, vsync notification layout), `redwood_apple80211` / `redwood_sta` / `redwood_net` (Apple80211 for `wifid`), `/dev/redwood-audio` interface, minisandbox container path, and `kern.exec_inject`. Like XNU itself, these files are under APSL 2.0.
 
-#### User space derived from HackiOS (MIT)
-`userland/gpu/eagl.c`, `userland/gpu/gl_osmesa.c`, `userland/gpu/inject.c`, `userland/mesa/*` (freedreno Darwin patches, `redwood-drm`), and `userland/audio/*` (RedwoodAudio HAL plug-in) are licensed under MIT:
+#### User space & Metal derived from HakiOS (MIT)
+`userland/gpu/eagl.c`, `userland/gpu/gl_osmesa.c`, `userland/gpu/inject.c`, `userland/metal/*` (PM4 packet processor, Adreno GEM transport, command buffer encoder), and `userland/audio/*` are licensed under MIT:
 
 ```
 MIT License
