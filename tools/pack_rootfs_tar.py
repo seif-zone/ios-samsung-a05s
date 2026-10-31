@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Package the prepared iOS 16 RootFS into a standard POSIX tar archive
 with exact Unix UIDs, GIDs, file modes, and symbolic links.
+Prunes all Windows junctions/reparse points to avoid duplicate paths and
+tar 'bad symlink' extraction errors.
 """
 import os
 import stat
@@ -25,6 +27,15 @@ SYMLINKS = {
     'sbin/fsck_hfs': '../System/Library/Filesystems/hfs.fs/fsck_hfs',
     'sbin/newfs_hfs': '../System/Library/Filesystems/hfs.fs/newfs_hfs',
 }
+
+
+def is_reparse(path):
+    """Check if path is a Windows directory junction or reparse point."""
+    try:
+        st = os.lstat(path)
+        return bool(st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT)
+    except Exception:
+        return False
 
 
 def get_posix_attr(rel_path, is_dir):
@@ -56,7 +67,7 @@ def get_posix_attr(rel_path, is_dir):
     elif any(rel_norm.startswith(p) for p in ['bin/', 'sbin/', 'usr/bin/', 'usr/sbin/', 'usr/libexec/']) or \
          rel_norm.endswith('.dylib') or \
          rel_norm.endswith('.app/SpringBoard') or \
-         'SpringBoard.app' in rel_norm and not rel_norm.endswith('.plist'):
+         ('SpringBoard.app' in rel_norm and not rel_norm.endswith('.plist')):
         if not is_dir:
             mode = 0o755
 
@@ -64,26 +75,19 @@ def get_posix_attr(rel_path, is_dir):
 
 
 def main():
-    print(f'Creating POSIX archive: {OUT_TAR}')
+    print(f'Creating clean POSIX archive (no junction conflicts): {OUT_TAR}')
     count = 0
 
     with tarfile.open(OUT_TAR, 'w') as tar:
-        # First, register explicitly defined symlinks
-        for link_path, target in SYMLINKS.items():
-            ti = tarfile.TarInfo(name=link_path)
-            ti.type = tarfile.SYMTYPE
-            ti.linkname = target
-            ti.uid, ti.gid, ti.uname, ti.gname, ti.mode = get_posix_attr(link_path, False)
-            tar.addfile(ti)
-            print(f'  Added symlink: {link_path} -> {target}')
-
-        # Walk directory
+        # Walk directory, strictly pruning any reparse points/junctions
         for dirpath, dirnames, filenames in os.walk(ROOT):
+            # Prune junctions so os.walk NEVER recurses into them
+            dirnames[:] = [d for d in dirnames if not is_reparse(os.path.join(dirpath, d))]
+
             rel_dir = os.path.relpath(dirpath, ROOT)
             if rel_dir == '.':
                 rel_dir = ''
 
-            # Skip symlink directories we already handled
             norm_rel_dir = rel_dir.replace('\\', '/')
             if norm_rel_dir in SYMLINKS:
                 continue
@@ -97,10 +101,12 @@ def main():
 
             for fn in filenames:
                 full_fn = os.path.join(dirpath, fn)
+                if is_reparse(full_fn):
+                    continue
+
                 rel_file = os.path.join(rel_dir, fn) if rel_dir else fn
                 norm_rel_file = rel_file.replace('\\', '/')
 
-                # Skip files replaced by symlinks
                 if norm_rel_file in SYMLINKS:
                     continue
 
@@ -117,6 +123,16 @@ def main():
                         print(f'  Archived {count} files...')
                 except Exception as e:
                     print(f'  Warning: Skipping {rel_file}: {e}')
+
+        # Add symlinks at the VERY END so all target directories exist first!
+        print('Adding canonical symlinks at the end of the archive...')
+        for link_path, target in SYMLINKS.items():
+            ti = tarfile.TarInfo(name=link_path)
+            ti.type = tarfile.SYMTYPE
+            ti.linkname = target
+            ti.uid, ti.gid, ti.uname, ti.gname, ti.mode = get_posix_attr(link_path, False)
+            tar.addfile(ti)
+            print(f'  Added symlink: {link_path} -> {target}')
 
     print(f'Done! Successfully archived {count} files into {OUT_TAR}')
     size_gb = os.path.getsize(OUT_TAR) / (1024**3)
