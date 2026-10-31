@@ -257,7 +257,7 @@ def build(seed=None, qemu=False, highmem=False, native=False, midmem=False):
         ('manufacturer', cstr('Apple Inc.')),
         ('#address-cells', u32(2)),
         ('#size-cells', u32(2)),
-    ], [chosen, pram, defaults, cpus, arm_io, fbcon, buttons] + product + ([] if qemu else [ufs]))
+    ], [chosen, pram, defaults, cpus, arm_io, fbcon, buttons] + product + ([ufs] if ("--ufs" in sys.argv and not qemu) else []))
 
 
 if __name__ == '__main__':

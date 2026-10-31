@@ -4,11 +4,12 @@ Date: Sat, 31 Oct 2026 23:55:00 +02:00
 Subject: [PATCH] a05s-0952: breadcrumbs, console noretarget, safe UFS probe, and timer init
 
 ---
- bsd/dev/sweet_ufs.c                   | 11 +++++++++++
+ bsd/dev/sweet_ufs.c                   | 13 +++++++++++++
  bsd/kern/bsd_init.c                   |  6 ++++++
- iokit/Kernel/arm/SweetFramebuffer.cpp | 11 +++++++++--
+ iokit/Kernel/arm/SweetFramebuffer.cpp | 12 ++++++++++--
+ iokit/bsddev/IOKitBSDInit.cpp         |  4 ++++
  pexpert/arm/pe_identify_machine.c     |  2 +-
- 4 files changed, 27 insertions(+), 3 deletions(-)
+ 5 files changed, 34 insertions(+), 3 deletions(-)
 
 diff --git a/bsd/dev/sweet_ufs.c b/bsd/dev/sweet_ufs.c
 index a8bc944..34def56 100644
@@ -21,15 +22,17 @@ index a8bc944..34def56 100644
  	uint32_t hce = ufs_rd(REG_HCE), hcs = ufs_rd(REG_HCS);
 +	kprintf("SWEET UFS: hce=0x%x hcs=0x%x\n", hce, hcs);
  	if (!(hce & 1) || !(hcs & HCS_DP) || !(hcs & HCS_UTRLRDY)) {
-@@ -746,4 +748,13 @@ sweet_ufs_init(void)
+@@ -746,4 +748,15 @@ sweet_ufs_init(void)
  	char want[64] = "userdata";
  	int error;
  
 +	kprintf("SWEET UFS: sweet_ufs_init() started\n");
-+	uint32_t noufs = 0;
++	uint32_t use_ufs = 0;
++	PE_parse_boot_argn("use_ufs", &use_ufs, sizeof(use_ufs));
++	uint32_t noufs = 1;
 +	PE_parse_boot_argn("noufs", &noufs, sizeof(noufs));
-+	if (noufs) {
-+		kprintf("SWEET UFS: disabled via boot-arg noufs=1\n");
++	if (noufs || !use_ufs) {
++		kprintf("SWEET UFS: probing skipped for A05s safety (noufs=%d, use_ufs=%d)\n", noufs, use_ufs);
 +		return ENXIO;
 +	}
 +
@@ -67,29 +70,46 @@ diff --git a/iokit/Kernel/arm/SweetFramebuffer.cpp b/iokit/Kernel/arm/SweetFrame
 index 72bc61e..49ac302 100644
 --- a/iokit/Kernel/arm/SweetFramebuffer.cpp
 +++ b/iokit/Kernel/arm/SweetFramebuffer.cpp
-@@ -441,5 +441,13 @@ AppleCLCD::start(IOService *provider)
+@@ -441,5 +441,14 @@ AppleCLCD::start(IOService *provider)
  			sweet_cons_fb = this;
  			sweet_console_show_hook = sweet_cons_show;
 -			sweet_console_retarget((vm_offset_t)c);
 -			fConsShown = true;
 -			flipFrom(c, fRowBytes);
 -			IOLog("SWEET FB: console double buffered (shadow %#llx)\n", fConsPhys);
-+			int noretarget = 0;
-+			PE_parse_boot_argn("sweetfb_noretarget", &noretarget, sizeof(noretarget));
-+			if (!noretarget) {
++			int retarget = 0;
++			PE_parse_boot_argn("sweetfb_retarget", &retarget, sizeof(retarget));
++			if (retarget) {
 +				sweet_console_retarget((vm_offset_t)c);
 +				fConsShown = true;
 +				flipFrom(c, fRowBytes);
 +				IOLog("SWEET FB: console double buffered (shadow %#llx)\n", fConsPhys);
 +			} else {
-+				IOLog("SWEET FB: console retained on boot framebuffer (sweetfb_noretarget=1)\n");
++				IOLog("SWEET FB: console retained directly on boot framebuffer 0x5c000000\n");
 +			}
  		} else {
-@@ -475,2 +483,3 @@ AppleCLCD::start(IOService *provider)
+@@ -475,2 +484,3 @@ AppleCLCD::start(IOService *provider)
  	IOLog("SWEET FB: AppleCLCD %ux%u stride %u at 0x%llx, default surface %u, presented as %ux%u\n",
  	    fWidth, fHeight, fRowBytes, fPhys, fSurface->id, fLogicalW, fLogicalH);
 +	kprintf("SWEET FB: AppleCLCD::start() completed successfully\n");
  	return true;
+diff --git a/iokit/bsddev/IOKitBSDInit.cpp b/iokit/bsddev/IOKitBSDInit.cpp
+index 32ba71e..91ef201 100644
+--- a/iokit/bsddev/IOKitBSDInit.cpp
++++ b/iokit/bsddev/IOKitBSDInit.cpp
+@@ -656,2 +656,3 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+ {
++	kprintf("IOFindBSDRoot: entered root search\n");
+ 	mach_timespec_t     t;
+@@ -824,2 +825,3 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+ 				goto iofrootx;                                                                  /* Join common exit... */
++				kprintf("IOFindBSDRoot: memory device %s ready\n", rootName);
+ 			}
+@@ -1005,2 +1007,3 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+ 	}
+ 
++	kprintf("IOFindBSDRoot: successfully resolved root device '%s'\n", rootName);
+ 	return kIOReturnSuccess;
 diff --git a/pexpert/arm/pe_identify_machine.c b/pexpert/arm/pe_identify_machine.c
 index 9e6da20..b121817 100644
 --- a/pexpert/arm/pe_identify_machine.c
@@ -99,3 +119,5 @@ index 9e6da20..b121817 100644
 -			return 0;
 +			kprintf("pe_arm_init_interrupts: AIC not present, continuing for arm64 GICv3\n");
  		}
+-- 
+2.39.2
