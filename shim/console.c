@@ -104,3 +104,27 @@ void con_hex2(const char *label, const char *a, uint32_t va, const char *b, uint
 	}
 	row++;
 }
+
+#include "apple_logo.h"
+
+void con_draw_apple_logo(void)
+{
+	/* Center horizontally on 1080px display: (1080 - 136) / 2 = 472 */
+	int start_x = (FB_W - APPLE_LOGO_W) / 2;
+	/* Center vertically slightly above the middle (middle is 1200, progress bar is ~1320, logo at 980..1160) */
+	int start_y = (FB_H / 2) - 220;
+
+	for (int y = 0; y < APPLE_LOGO_H; y++) {
+		volatile uint32_t *line = con_fb + (start_y + y) * (FB_STRIDE / 4);
+		const unsigned char *bitmap_row = &apple_logo_bitmap[y * APPLE_LOGO_ROW_BYTES];
+		for (int bx = 0; bx < APPLE_LOGO_ROW_BYTES; bx++) {
+			unsigned char byte_val = bitmap_row[bx];
+			for (int b = 0; b < 8; b++) {
+				int x = start_x + (bx * 8 + b);
+				if (byte_val & (0x80 >> b)) {
+					line[x] = WHITE;
+				}
+			}
+		}
+	}
+}

@@ -177,7 +177,11 @@ const char *loader_boot(uintptr_t dtb)
 
 	uintptr_t entry_pa = p->entry_va + pa_of_va_base;
 	con_hex("JUMP", entry_pa);
-	con_str("XNU", "jumping (fbcon clears screen)");
+	con_str("XNU", "jumping (drawing apple logo)");
+
+	/* Clear diagnostic screen to pure black and draw crisp white Apple Logo! */
+	con_clear(BLACK);
+	con_draw_apple_logo();
 
 	/* Everything was written with the MMU and caches off; drop any stale I-cache lines too. */
 	__asm__ volatile("dsb sy; ic iallu; dsb sy; isb" ::: "memory");
