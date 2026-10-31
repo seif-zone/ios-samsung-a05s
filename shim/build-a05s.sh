@@ -59,4 +59,7 @@ $MKBOOTIMG \
 	-o out/a05s-boot.img
 
 echo "[+] Successfully created out/a05s-boot.img"
-ls -lh out/Image out/a05s-boot.img
+echo "[*] Creating Odin flashable package (out/a05s-boot.tar)..."
+(cd out && cp a05s-boot.img boot.img && tar -H ustar -cf a05s-boot.tar boot.img && rm -f boot.img)
+echo "[+] Successfully created out/a05s-boot.tar (for Samsung Odin / Download Mode)"
+ls -lh out/Image out/a05s-boot.img out/a05s-boot.tar
