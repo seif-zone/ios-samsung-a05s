@@ -147,18 +147,89 @@ index 6826d43..275b28b 100644
  
  	if (SecureDTLookupEntry(NULL, "/sweet-ufs", &node) != kSuccess ||
  	    SecureDTGetProperty(node, "reg", (void const **)&reg, &size) != kSuccess ||
+diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
+index ad57fe7..9c84d89 100644
+--- a/bsd/kern/bsd_init.c
++++ b/bsd/kern/bsd_init.c
+@@ -869,6 +869,9 @@ bsd_init(void)
+ 	inittodr(0);
+ 
+ 	/* Mount the root file system. */
++#if defined(ARM64_BOARD_CONFIG_SWEET)
++	int sweet_mount_retries = 0;
++#endif
+ 	while (TRUE) {
+ 		int err;
+ 
+@@ -901,6 +904,19 @@ bsd_init(void)
+ 		}
+ #endif
+ 		printf("cannot mount root, errno = %d\n", err);
++#if defined(ARM64_BOARD_CONFIG_SWEET)
++		sweet_mount_retries++;
++		if (sweet_mount_retries >= 3) {
++			kprintf("BSD_INIT: root mount failed %d times. Falling back to md0 RAMDisk...\n", sweet_mount_retries);
++			strlcpy(rootdevice, "md0", sizeof(rootdevice));
++			rootdev = makedev(1, 0);
++			if (0 == (err = vfs_mountroot())) {
++				kprintf("BSD_INIT: vfs_mountroot(md0) fallback succeeded!\n");
++				break;
++			}
++			panic("cannot mount root (fallback to md0 also failed, errno = %d)", err);
++		}
++#endif
+ 	}
+ 
+ 	IOSecureBSDRoot(rootdevice);
+diff --git a/bsd/net/dlil.c b/bsd/net/dlil.c
+index ddc5f41..abcf0da 100644
+--- a/bsd/net/dlil.c
++++ b/bsd/net/dlil.c
+@@ -2705,8 +2705,14 @@ dlil_init(void)
+ 	while (dlil_pending_thread_cnt != 0) {
+ 		DLIL_PRINTF("%s: Waiting for all the create dlil kernel "
+ 		    "threads to get scheduled at least once.\n", __func__);
++#if defined(ARM64_BOARD_CONFIG_SWEET)
++		struct timespec ts = { .tv_sec = 0, .tv_nsec = 20000000 };
++		(void) msleep(&dlil_pending_thread_cnt, &dlil_thread_sync_lock,
++		    (PZERO - 1), __func__, &ts);
++#else
+ 		(void) msleep(&dlil_pending_thread_cnt, &dlil_thread_sync_lock,
+ 		    (PZERO - 1), __func__, NULL);
++#endif
+ 		LCK_MTX_ASSERT(&dlil_thread_sync_lock, LCK_ASSERT_OWNED);
+ 	}
+ 	lck_mtx_unlock(&dlil_thread_sync_lock);
+@@ -9078,8 +9084,14 @@ ifnet_attach(ifnet_t ifp, const struct sockaddr_dl *ll_addr)
+ 		DLIL_PRINTF("%s: Waiting for all kernel threads created for "
+ 		    "interface %s to get scheduled at least once.\n",
+ 		    __func__, ifp->if_xname);
++#if defined(ARM64_BOARD_CONFIG_SWEET)
++		struct timespec ts = { .tv_sec = 0, .tv_nsec = 20000000 };
++		(void) msleep(&ifp->if_threads_pending, &ifp->if_ref_lock, (PZERO - 1),
++		    __func__, &ts);
++#else
+ 		(void) msleep(&ifp->if_threads_pending, &ifp->if_ref_lock, (PZERO - 1),
+ 		    __func__, NULL);
++#endif
+ 		LCK_MTX_ASSERT(&ifp->if_ref_lock, LCK_ASSERT_OWNED);
+ 	}
+ 	lck_mtx_unlock(&ifp->if_ref_lock);
 diff --git a/iokit/bsddev/IOKitBSDInit.cpp b/iokit/bsddev/IOKitBSDInit.cpp
-index b36eeb6..adab75a 100644
+index b36eeb6..3c0bf00 100644
 --- a/iokit/bsddev/IOKitBSDInit.cpp
 +++ b/iokit/bsddev/IOKitBSDInit.cpp
-@@ -769,19 +769,19 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+@@ -769,19 +769,22 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
  
  #if defined(ARM64_BOARD_CONFIG_SWEET)
  //
 -//	SWEET: root on a GPT partition of the internal UFS (bsd/dev/sweet_ufs.c)
-+//	SWEET: root on internal UFS (or fallback to md0 RAMDisk if not yet formatted)
++//	SWEET: always probe internal UFS storage
  //
 -	if (strcmp(rdBootVar, "ufsroot0") == 0) {
++	extern int sweet_ufs_init(void);
++	(void)sweet_ufs_init();
++
 +	if (strcmp(rdBootVar, "ufsroot0") == 0 || strcmp(rdBootVar, "emmcroot0") == 0) {
  		extern int sweet_ufs_rootdev(dev_t *dev);
  		OSSafeReleaseNULL(matching);
