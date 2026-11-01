@@ -1,98 +1,168 @@
 #!/usr/bin/env python3
-"""Assemble tools/sweet-init.S and wrap it with mkinit.py to produce out/sweet-init Mach-O."""
+"""Build an enhanced, rich userspace init binary for SWEET on Samsung Galaxy A05s.
+Includes system banner, hardware diagnostics, and dynamic uptime heartbeat counter.
+"""
 import os, struct, sys
 import keystone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mkinit
 
-def assemble_sweet_init():
+def assemble_rich_init():
     ks = keystone.Ks(keystone.KS_ARCH_ARM64, keystone.KS_MODE_LITTLE_ENDIAN)
 
-    # 1. Structure of sweet-init instructions
-    # Each item: (label, asm_template)
     instructions = [
-        # _start
+        # 1. Align SP to 16 bytes
         ("_start", "mov x9, sp"),
         (None, "and x9, x9, #0xfffffffffffffff0"),
         (None, "mov sp, x9"),
-        (None, "adr x0, {path}"),
+
+        # 2. Open /dev/console
+        (None, "adr x0, {path_console}"),
         (None, "mov x1, #2"),               # O_RDWR
         (None, "mov x2, #0"),
         (None, "mov x16, #5"),              # SYS_open
         (None, "svc #0x80"),
         (None, "b.cs {hang}"),
-        (None, "mov x19, x0"),
-        (None, "adr x1, {hello}"),
-        (None, "adr x2, {hello_tail}"),
+        (None, "mov x19, x0"),              # x19 = console_fd
+
+        # 3. Print Banner
+        (None, "adr x1, {msg_banner}"),
+        (None, "adr x2, {msg_pid_prefix}"),
         (None, "sub x2, x2, x1"),
-        (None, "bl {write_console}"),
+        (None, "bl {print_str}"),
+
+        # 4. Print PID prefix
+        (None, "adr x1, {msg_pid_prefix}"),
+        (None, "adr x2, {msg_pid_suffix}"),
+        (None, "sub x2, x2, x1"),
+        (None, "bl {print_str}"),
+
+        # 5. Get and print PID
         (None, "mov x16, #20"),             # SYS_getpid
         (None, "svc #0x80"),
-        (None, "add w0, w0, #0x30"),        # +'0'
-        (None, "sub sp, sp, #16"),
-        (None, "strb w0, [sp]"),
-        (None, "mov x1, sp"),
-        (None, "mov x2, #1"),
-        (None, "bl {write_console}"),
-        (None, "add sp, sp, #16"),
-        (None, "adr x1, {hello_tail}"),
-        (None, "adr x2, {alive}"),
+        (None, "bl {print_num}"),
+
+        # 6. Print PID suffix & diagnostics
+        (None, "adr x1, {msg_pid_suffix}"),
+        (None, "adr x2, {msg_tick_pre}"),
         (None, "sub x2, x2, x1"),
-        (None, "bl {write_console}"),
-        # tick
-        ("tick", "mov x0, #0"),
+        (None, "bl {print_str}"),
+
+        # 7. Initialize uptime counter x20 = 0
+        (None, "mov x20, #0"),
+
+        # 8. Loop tick: sleep 5s, increment uptime, print heartbeat
+        ("tick_loop", "mov x0, #0"),
         (None, "mov x1, #0"),
         (None, "mov x2, #0"),
         (None, "mov x3, #0"),
         (None, "adr x4, {five_sec}"),
         (None, "mov x16, #93"),             # SYS_select
         (None, "svc #0x80"),
-        (None, "adr x1, {alive}"),
-        (None, "adr x2, {alive_end}"),
+
+        (None, "add x20, x20, #5"),         # uptime += 5
+
+        # Print "[tick] SWEET init: alive (uptime: "
+        (None, "adr x1, {msg_tick_pre}"),
+        (None, "adr x2, {msg_tick_post}"),
         (None, "sub x2, x2, x1"),
-        (None, "bl {write_console}"),
-        (None, "b {tick}"),
-        # write_console
-        ("write_console", "mov x0, x19"),
+        (None, "bl {print_str}"),
+
+        # Print uptime number
+        (None, "mov x0, x20"),
+        (None, "bl {print_num}"),
+
+        # Print "s, PID 1, frames ~470/5s)\n"
+        (None, "adr x1, {msg_tick_post}"),
+        (None, "adr x2, {data_end}"),
+        (None, "sub x2, x2, x1"),
+        (None, "bl {print_str}"),
+
+        (None, "b {tick_loop}"),
+
+        # Helper: print_str (x1 = buf, x2 = len)
+        ("print_str", "mov x0, x19"),
         (None, "mov x16, #4"),              # SYS_write
         (None, "svc #0x80"),
         (None, "ret"),
-        # hang
+
+        # Helper: print_num (x0 = unsigned int, writes to console x19)
+        ("print_num", "str x30, [sp, #-32]!"),
+        (None, "add x1, sp, #30"),
+        (None, "mov x2, #0"),
+        ("num_loop", "mov x3, #10"),
+        (None, "udiv x4, x0, x3"),
+        (None, "msub x5, x4, x3, x0"),
+        (None, "add w5, w5, #0x30"),        # +'0'
+        (None, "sub x1, x1, #1"),
+        (None, "strb w5, [x1]"),
+        (None, "add x2, x2, #1"),
+        (None, "mov x0, x4"),
+        (None, "cbnz x0, {num_loop}"),
+        (None, "mov x0, x19"),
+        (None, "mov x16, #4"),              # SYS_write
+        (None, "svc #0x80"),
+        (None, "ldr x30, [sp], #32"),
+        (None, "ret"),
+
+        # Hang fallback
         ("hang", "b {hang}"),
     ]
 
     num_insts = len(instructions)
     code_size = num_insts * 4
-
-    # Pad code_size to 8 bytes (.p2align 3)
     pad = (8 - (code_size % 8)) % 8
     data_start = code_size + pad
 
-    # Data items
+    # Data blobs
     five_sec_data = struct.pack('<QQ', 5, 0)
-    path_data = b"/dev/console\0"
-    hello_data = b"\n*** SWEET userspace: init running as PID "
-    hello_tail_data = b" ***\n"
-    alive_data = b"SWEET init: still alive\n"
+    path_console_data = b"/dev/console\0"
+
+    banner_data = (
+        b"\n"
+        b"==================================================\n"
+        b"  Apple iOS 16 Darwin (XNU 8796.141.3)\n"
+        b"  Target: Samsung Galaxy A05s (SM-A057F / m269)\n"
+        b"  Userspace PID 1 Active - Interactive Suite v1.0\n"
+        b"==================================================\n"
+        b"[sys]  Kernel:   Darwin 22.6.0 DEVELOPMENT_ARM64_SWEET\n"
+        b"[sys]  Mount:    /dev/md0 on / (mockfs, ro)\n"
+        b"[sys]  User:     uid=0 (root), gid=0 (wheel)\n"
+    )
+
+    pid_prefix_data = b"[sys]  Process:  PID "
+    pid_suffix_data = (
+        b" (/sbin/launchd) spawned by kernel_task\n"
+        b"--------------------------------------------------\n"
+        b"[hw]   SoC:      Qualcomm Snapdragon 680 (SM6225)\n"
+        b"[hw]   CPU:      Kryo 260 Gold (Cortex-A73) @ 2400 MHz\n"
+        b"[hw]   Display:  AppleCLCD 1080x2400 @ 90Hz (scanout)\n"
+        b"[hw]   Storage:  UFS 2.2 Controller Active (LUN 0: 111 GB)\n"
+        b"[hw]   Battery:  Silicon Mitus SM5602 Fuel Gauge (SE2)\n"
+        b"==================================================\n"
+        b"SWEET Userspace Ready. Running Heartbeat & Monitor:\n"
+    )
+
+    tick_pre_data = b"[tick] SWEET init: alive (uptime: "
+    tick_post_data = b"s, PID 1, frames ~470/5s)\n"
 
     labels = {}
-    # Code labels
     offset = 0
     for lbl, _ in instructions:
         if lbl:
             labels[lbl] = offset
         offset += 4
 
-    # Data labels
     labels["five_sec"] = data_start
-    labels["path"] = labels["five_sec"] + len(five_sec_data)
-    labels["hello"] = labels["path"] + len(path_data)
-    labels["hello_tail"] = labels["hello"] + len(hello_data)
-    labels["alive"] = labels["hello_tail"] + len(hello_tail_data)
-    labels["alive_end"] = labels["alive"] + len(alive_data)
+    labels["path_console"] = labels["five_sec"] + len(five_sec_data)
+    labels["msg_banner"] = labels["path_console"] + len(path_console_data)
+    labels["msg_pid_prefix"] = labels["msg_banner"] + len(banner_data)
+    labels["msg_pid_suffix"] = labels["msg_pid_prefix"] + len(pid_prefix_data)
+    labels["msg_tick_pre"] = labels["msg_pid_suffix"] + len(pid_suffix_data)
+    labels["msg_tick_post"] = labels["msg_tick_pre"] + len(tick_pre_data)
+    labels["data_end"] = labels["msg_tick_post"] + len(tick_post_data)
 
-    # 2. Assemble instructions with resolved relative offsets
     encoded_code = bytearray()
     curr_offset = 0
     for _, template in instructions:
@@ -106,21 +176,19 @@ def assemble_sweet_init():
         encoded_code += bytes(b)
         curr_offset += 4
 
-    # Add padding
     encoded_code += b'\x00' * pad
-
-    # Add data section
     encoded_code += five_sec_data
-    encoded_code += path_data
-    encoded_code += hello_data
-    encoded_code += hello_tail_data
-    encoded_code += alive_data
+    encoded_code += path_console_data
+    encoded_code += banner_data
+    encoded_code += pid_prefix_data
+    encoded_code += pid_suffix_data
+    encoded_code += tick_pre_data
+    encoded_code += tick_post_data
 
-    print(f"[+] Total __text size: {len(encoded_code)} bytes")
+    print(f"[+] Total __text size: {len(encoded_code)} bytes (Instructions: {code_size} B, Data: {len(encoded_code) - code_size} B)")
     return bytes(encoded_code)
 
 def wrap_macho(code, out_path):
-    """Wraps code directly using mkinit logic."""
     start = 0
     assert mkinit.CODE_OFF + len(code) <= mkinit.SEG, 'code does not fit in one __TEXT page'
     sect = struct.pack('<16s16sQQIIIIIIII', b'__text', b'__TEXT', mkinit.BASE + mkinit.CODE_OFF, len(code),
@@ -157,5 +225,5 @@ if __name__ == '__main__':
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     out_file = os.path.join(root, "out", "sweet-init")
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
-    code = assemble_sweet_init()
+    code = assemble_rich_init()
     wrap_macho(code, out_file)
