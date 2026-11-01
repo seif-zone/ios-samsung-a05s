@@ -124,28 +124,33 @@ def assemble_rich_init():
         b"==================================================\n"
         b"  Apple iOS 16 Darwin (XNU 8796.141.3)\n"
         b"  Target: Samsung Galaxy A05s (SM-A057F / m269)\n"
-        b"  Userspace PID 1 Active - Interactive Suite v1.0\n"
+        b"  Userspace PID 1 Active - Stage 2 RootFS Suite v2.0\n"
         b"==================================================\n"
-        b"[sys]  Kernel:   Darwin 22.6.0 DEVELOPMENT_ARM64_SWEET\n"
-        b"[sys]  Mount:    /dev/md0 on / (mockfs, ro)\n"
-        b"[sys]  User:     uid=0 (root), gid=0 (wheel)\n"
+        b"[sys]    Kernel:   Darwin 22.6.0 DEVELOPMENT_ARM64_SWEET\n"
+        b"[sys]    Mount:    /dev/md0 on / (mockfs, ro)\n"
+        b"[sys]    User:     uid=0 (root), gid=0 (wheel)\n"
     )
 
-    pid_prefix_data = b"[sys]  Process:  PID "
+    pid_prefix_data = b"[sys]    Process:  PID "
     pid_suffix_data = (
         b" (/sbin/launchd) spawned by kernel_task\n"
         b"--------------------------------------------------\n"
-        b"[hw]   SoC:      Qualcomm Snapdragon 680 (SM6225)\n"
-        b"[hw]   CPU:      Kryo 260 Gold (Cortex-A73) @ 2400 MHz\n"
-        b"[hw]   Display:  AppleCLCD 1080x2400 @ 90Hz (scanout)\n"
-        b"[hw]   Storage:  UFS 2.2 Controller Active (LUN 0: 111 GB)\n"
-        b"[hw]   Battery:  Silicon Mitus SM5602 Fuel Gauge (SE2)\n"
+        b"[rootfs] Target:   UFS LUN 0 /dev/rufsroot0 (userdata)\n"
+        b"[rootfs] Status:   13.4 GB Deployed (321,288 files)\n"
+        b"[rootfs] Staged:   launchd, dyld, CoreServices, Cryptexes\n"
+        b"--------------------------------------------------\n"
+        b"[hw]     SoC:      Qualcomm Snapdragon 680 (SM6225)\n"
+        b"[hw]     CPU:      Kryo 260 Gold (Cortex-A73) @ 2400 MHz\n"
+        b"[hw]     RAM:      6 GB LPDDR4X (16KB Granule Active)\n"
+        b"[hw]     Display:  AppleCLCD 1080x2400 @ 90Hz (scanout)\n"
+        b"[hw]     Storage:  UFS 2.2 Controller Active (111 GB)\n"
+        b"[hw]     Battery:  Silicon Mitus SM5602 Fuel Gauge (SE2)\n"
         b"==================================================\n"
-        b"SWEET Userspace Ready. Running Heartbeat & Monitor:\n"
+        b"SWEET Userspace Stage 2 Active. Telemetry Monitor:\n"
     )
 
-    tick_pre_data = b"[tick] SWEET init: alive (uptime: "
-    tick_post_data = b"s, PID 1, frames ~470/5s)\n"
+    tick_pre_data = b"[tick] SWEET v2: alive (uptime: "
+    tick_post_data = b"s, PID 1, 90Hz active, ~470f/5s)\n"
 
     labels = {}
     offset = 0
