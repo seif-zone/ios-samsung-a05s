@@ -1,13 +1,19 @@
 diff --git a/bsd/dev/sweet_ufs.c b/bsd/dev/sweet_ufs.c
-index 6826d43..91ec7a7 100644
+index 6826d43..275b28b 100644
 --- a/bsd/dev/sweet_ufs.c
 +++ b/bsd/dev/sweet_ufs.c
-@@ -311,101 +311,38 @@ ufs_sync_cache(void)
- 
- static int
+@@ -43,6 +43,7 @@
+ extern ppnum_t pmap_find_phys(pmap_t pmap, addr64_t va);
+ /* osfmk/arm/machine_routines.h, not exported to the BSD layer */
+ extern vm_offset_t ml_io_map(vm_offset_t phys_addr, vm_size_t size);
++extern void kprintf(const char *fmt, ...);
+ /* osfmk/arm/cpu_data.h, not exported to the BSD layer */
+ extern int get_preemption_level(void);
+ extern kern_return_t kernel_thread_start(thread_continue_t, void *, thread_t *);
+@@ -313,61 +314,70 @@ static int
  ufs_find_partition(const char *want)
--{
--	const uint8_t *b = (const uint8_t *)(su.dma + DMA_BOUNCE);
+ {
+ 	const uint8_t *b = (const uint8_t *)(su.dma + DMA_BOUNCE);
 -	int error = ufs_read_blocks(1, 1);
 -	if (error) {
 -		return error;
@@ -42,99 +48,66 @@ index 6826d43..91ec7a7 100644
 -				break;
 -			}
 -			name[c] = (char)ch;
--		}
--		name[c] = 0;
--		if (strcmp(name, want) != 0) {
--			continue;
--		}
--		uint64_t first, last;
--		memcpy(&first, e + 32, 8);
--		memcpy(&last, e + 40, 8);
--		if (last < first) {
--			return ENXIO;
--		}
--		su.first_block = first;
--		su.nblocks = last - first + 1;
--		if (ufs_read_blocks(gpt_alt, 1) == 0 && memcmp(b, "EFI PART", 8) == 0) {
--			memcpy(&gpt_bhcrc, b + 16, 4);
--		}
--		printf("SWEET UFS: GPT LUN0 hcrc %#x ecrc %#x backup@%#llx hcrc %#x\n",
--		    gpt_hcrc, gpt_ecrc, gpt_alt, gpt_bhcrc);
--		return 0;
--	}
--	printf("SWEET UFS: no GPT partition named \"%s\"\n", want);
--	return ENOENT;
--}
--
--/*
-- * topaz: read-only access to other GPT partitions on LUNs 0-5 (modem firmware in
-- * modem_a, later the EFS copies). Never writes; the LUN0 GPT fence state is untouched.
-- */
--static struct { char name[37]; uint8_t lun; uint64_t first, nblocks; } part_cache[8];
--static unsigned part_cached;
--
--static int
--ufs_lookup_part(const char *want, unsigned *slot)
- {
- 	const uint8_t *b = (const uint8_t *)(su.dma + DMA_BOUNCE);
- 
--	for (unsigned i = 0; i < part_cached; i++) {
--		if (strcmp(part_cache[i].name, want) == 0) {
--			*slot = i;
--			return 0;
--		}
--	}
--	if (part_cached == sizeof(part_cache) / sizeof(part_cache[0]) || strlen(want) > 36) {
--		return ENOSPC;
--	}
- 	for (uint8_t lun = 0; lun < 6; lun++) {
- 		su.lun = lun;
--		if (ufs_read_blocks(1, 1) != 0 || memcmp(b, "EFI PART", 8) != 0) {
++
++	for (uint8_t lun = 0; lun < 6; lun++) {
++		su.lun = lun;
 +		static const uint8_t tur[6] = { 0x00 };
 +		if (ufs_scsi(tur, sizeof(tur), 0, false) != 0) {
 +			continue;
-+		}
+ 		}
+-		name[c] = 0;
+-		if (strcmp(name, want) != 0) {
 +
 +		int error = ufs_read_blocks(1, 1);
 +		if (error || memcmp(b, "EFI PART", 8) != 0) {
  			continue;
  		}
+-		uint64_t first, last;
+-		memcpy(&first, e + 32, 8);
+-		memcpy(&last, e + 40, 8);
+-		if (last < first) {
+-			return ENXIO;
 +
- 		uint64_t entry_lba;
- 		uint32_t nent, esz;
++		uint64_t entry_lba;
++		uint32_t nent, esz;
 +		memcpy(&gpt_hcrc, b + 16, 4);
 +		memcpy(&gpt_alt, b + 32, 8);
 +		memcpy(&gpt_ecrc, b + 88, 4);
- 		memcpy(&entry_lba, b + 72, 8);
- 		memcpy(&nent, b + 80, 4);
- 		memcpy(&esz, b + 84, 4);
--		if (esz != 128 || nent == 0 || nent * esz > BOUNCE_SIZE ||
--		    ufs_read_blocks(entry_lba, (nent * esz + UFS_BLOCK - 1) / UFS_BLOCK) != 0) {
++		memcpy(&entry_lba, b + 72, 8);
++		memcpy(&nent, b + 80, 4);
++		memcpy(&esz, b + 84, 4);
 +		if (esz != 128 || nent == 0 || nent * esz > BOUNCE_SIZE) {
- 			continue;
- 		}
++			continue;
++		}
 +
 +		error = ufs_read_blocks(entry_lba, (nent * esz + UFS_BLOCK - 1) / UFS_BLOCK);
 +		if (error) {
 +			continue;
-+		}
+ 		}
+-		su.first_block = first;
+-		su.nblocks = last - first + 1;
+-		if (ufs_read_blocks(gpt_alt, 1) == 0 && memcmp(b, "EFI PART", 8) == 0) {
+-			memcpy(&gpt_bhcrc, b + 16, 4);
 +
- 		for (uint32_t i = 0; i < nent; i++) {
- 			const uint8_t *e = b + i * esz;
- 			char name[37];
-@@ -418,58 +355,29 @@ ufs_lookup_part(const char *want, unsigned *slot)
- 				name[c] = (char)ch;
- 			}
- 			name[c] = 0;
++		for (uint32_t i = 0; i < nent; i++) {
++			const uint8_t *e = b + i * esz;
++			char name[37];
++			unsigned c;
++			for (c = 0; c < 36; c++) {
++				uint16_t ch = (uint16_t)(e[56 + 2 * c] | e[57 + 2 * c] << 8);
++				if (ch == 0 || ch > 0x7f) {
++					break;
++				}
++				name[c] = (char)ch;
++			}
++			name[c] = 0;
 +			if (strcmp(name, want) != 0) {
 +				continue;
 +			}
 +
- 			uint64_t first, last;
- 			memcpy(&first, e + 32, 8);
- 			memcpy(&last, e + 40, 8);
--			if (strcmp(name, want) != 0 || last < first) {
--				continue;
++			uint64_t first, last;
++			memcpy(&first, e + 32, 8);
++			memcpy(&last, e + 40, 8);
 +			if (last < first) {
 +				return ENXIO;
 +			}
@@ -142,61 +115,22 @@ index 6826d43..91ec7a7 100644
 +			su.nblocks = last - first + 1;
 +			if (ufs_read_blocks(gpt_alt, 1) == 0 && memcmp(b, "EFI PART", 8) == 0) {
 +				memcpy(&gpt_bhcrc, b + 16, 4);
- 			}
--			unsigned k = part_cached++;
--			strlcpy(part_cache[k].name, want, sizeof(part_cache[k].name));
--			part_cache[k].lun = lun;
--			part_cache[k].first = first;
--			part_cache[k].nblocks = last - first + 1;
--			printf("SWEET UFS: partition %s: LUN %u blocks 0x%llx+0x%llx (read-only)\n",
--			    want, lun, first, last - first + 1);
--			*slot = k;
-+			kprintf("SWEET UFS: found \"%s\" on LUN %u at 0x%llx (%llu MiB)\n",
++			}
++			printf("SWEET UFS: found \"%s\" on LUN %u at 0x%llx (%llu MiB)\n",
 +			    want, su.lun, su.first_block, (su.nblocks * UFS_BLOCK) >> 20);
- 			return 0;
++			return 0;
  		}
+-		printf("SWEET UFS: GPT LUN0 hcrc %#x ecrc %#x backup@%#llx hcrc %#x\n",
+-		    gpt_hcrc, gpt_ecrc, gpt_alt, gpt_bhcrc);
+-		return 0;
  	}
--	return ENOENT;
--}
- 
--int sweet_ufs_read_part(const char *want, uint64_t off, void *dst, uint64_t len);
--int
--sweet_ufs_read_part(const char *want, uint64_t off, void *dst, uint64_t len)
--{
--	unsigned slot = 0;
--	int error;
--
--	if (!su.ready) {
--		return EAGAIN;
--	}
--	lck_mtx_lock(&sweet_ufs_lock);
--	uint8_t saved = su.lun;
--	error = ufs_lookup_part(want, &slot);
--	uint64_t bytes = error ? 0 : part_cache[slot].nblocks * UFS_BLOCK;
--	if (!error && (off > bytes || len > bytes - off)) {
--		error = EINVAL;
--	}
--	for (uint64_t done = 0; !error && done < len;) {
--		uint64_t pos = off + done;
--		uint32_t skip = (uint32_t)(pos % UFS_BLOCK);
--		uint32_t want_b = (uint32_t)MIN(len - done, (uint64_t)(BOUNCE_SIZE - skip));
--		uint32_t blocks = (skip + want_b + UFS_BLOCK - 1) / UFS_BLOCK;
--		su.lun = part_cache[slot].lun;
--		error = ufs_read_blocks(part_cache[slot].first + pos / UFS_BLOCK, blocks);
--		if (!error) {
--			memcpy((uint8_t *)dst + done, (const uint8_t *)(su.dma + DMA_BOUNCE) + skip, want_b);
--			done += want_b;
--		}
--	}
--	su.lun = saved;
--	lck_mtx_unlock(&sweet_ufs_lock);
--	return error;
-+	kprintf("SWEET UFS: no GPT partition named \"%s\" found on any active LUN\n", want);
-+	return ENOENT;
+-	printf("SWEET UFS: no GPT partition named \"%s\"\n", want);
++
++	printf("SWEET UFS: no GPT partition named \"%s\" found on any active LUN\n", want);
+ 	return ENOENT;
  }
  
- static int
-@@ -747,15 +655,7 @@ sweet_ufs_init(void)
+@@ -747,15 +757,7 @@ sweet_ufs_init(void)
  	char want[64] = "userdata";
  	int error;
  
@@ -209,12 +143,12 @@ index 6826d43..91ec7a7 100644
 -		kprintf("SWEET UFS: probing skipped for A05s safety (noufs=%d, use_ufs=%d)\n", noufs, use_ufs);
 -		return ENXIO;
 -	}
-+	kprintf("SWEET UFS: sweet_ufs_init() starting\n");
++	printf("SWEET UFS: sweet_ufs_init() starting\n");
  
  	if (SecureDTLookupEntry(NULL, "/sweet-ufs", &node) != kSuccess ||
  	    SecureDTGetProperty(node, "reg", (void const **)&reg, &size) != kSuccess ||
 diff --git a/iokit/bsddev/IOKitBSDInit.cpp b/iokit/bsddev/IOKitBSDInit.cpp
-index b36eeb6..3eca6d4 100644
+index b36eeb6..adab75a 100644
 --- a/iokit/bsddev/IOKitBSDInit.cpp
 +++ b/iokit/bsddev/IOKitBSDInit.cpp
 @@ -769,19 +769,19 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,

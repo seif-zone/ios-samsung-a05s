@@ -1,20 +1,10 @@
-From 7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b Mon Sep 17 00:00:00 2001
-From: A05s Developer <dev@a05s.local>
-Date: Sat, 31 Oct 2026 04:00:00 +0200
-Subject: [PATCH] a05s-0951: Samsung Galaxy A05s (SM-A057F / m269) hardware adapt
-
-Route SM5602 fuel gauge to QUP0 SE2 (0x04a88000) on GPIO 6/7 (WEST tile)
-matching Longcheer m269 devicetree.
----
- bsd/dev/sweet_i2c1.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
-
 diff --git a/bsd/dev/sweet_i2c1.c b/bsd/dev/sweet_i2c1.c
-index 08cdc34..991a05b 100644
+index 8037ad6..546e55f 100644
 --- a/bsd/dev/sweet_i2c1.c
 +++ b/bsd/dev/sweet_i2c1.c
-@@ -34,11 +34,11 @@ int sweet_i2c1_init(void);
+@@ -17,11 +17,11 @@ int sweet_i2c1_init(void);
  int sweet_i2c1_read(uint8_t addr, uint8_t reg, uint8_t *buf, unsigned len);
+ int sweet_i2c1_write(uint8_t addr, uint8_t reg, uint8_t val);
  
 -#define I2C1_SE_PA      0x04a84000u
 +#define I2C1_SE_PA      0x04a88000u     /* Galaxy A05s m269: QUP0 SE2 */
@@ -28,10 +18,16 @@ index 08cdc34..991a05b 100644
  
  #define SE_STATUS       0x040u
  #define SE_MCLK         0x048u
-@@ -207,9 +207,9 @@ sweet_i2c1_init(void)
- 	wr(i2c1_gcc, I2C1_GCC_VOTE, rd(i2c1_gcc, I2C1_GCC_VOTE) | 0x13c0u);
- 	wait_clear(i2c1_gcc, I2C1_CBCR, 1u << 31);
- 
+@@ -200,14 +200,14 @@ sweet_i2c1_init(void)
+ 		return ENOMEM;
+ 	}
+ 	/* OR our votes in: other bits of the shared register belong to others */
+-	wr(i2c1_gcc, I2C1_GCC_VOTE, rd(i2c1_gcc, I2C1_GCC_VOTE) | 0xbc0u);
++	wr(i2c1_gcc, I2C1_GCC_VOTE, rd(i2c1_gcc, I2C1_GCC_VOTE) | 0x13c0u);
+ 	if (!wait_clear(i2c1_gcc, I2C1_CBCR, 1u << 31)) {
+ 		printf("SWEET I2C1: SE1 clock off (cbcr %#x)\n", rd(i2c1_gcc, I2C1_CBCR));
+ 		return EIO;
+ 	}
 -	/* GPIO4/5: function 1 (qup1), 2 mA, no pull (TopazBattery CTL 0x4) */
 -	wr(i2c1_west, 0x4000, (rd(i2c1_west, 0x4000) & ~0x3ffu) | 0x4u);
 -	wr(i2c1_west, 0x5000, (rd(i2c1_west, 0x5000) & ~0x3ffu) | 0x4u);
@@ -41,5 +37,3 @@ index 08cdc34..991a05b 100644
  
  	uint32_t fw = rd(i2c1_se, SE_FW), rxp = rd(i2c1_se, SE_HW_RX);
  	if (((fw >> 8) & 0xffu) != 3u || (rd(i2c1_se, SE_STATUS) & 0x1001u)) {
--- 
-2.43.0
