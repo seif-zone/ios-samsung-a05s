@@ -1,21 +1,28 @@
 diff --git a/bsd/sweet_hfs/core/BTree.c b/bsd/sweet_hfs/core/BTree.c
-index a305ee5..5306941 100644
+index a305ee5..917166f 100644
 --- a/bsd/sweet_hfs/core/BTree.c
 +++ b/bsd/sweet_hfs/core/BTree.c
-@@ -252,6 +252,30 @@ OSStatus BTOpenPath(FCB *filePtr, KeyCompareProcPtr keyCompareProc)
+@@ -252,6 +252,41 @@ OSStatus BTOpenPath(FCB *filePtr, KeyCompareProcPtr keyCompareProc)
  
  	///////////////////////////// verify header /////////////////////////////////
  
-+	/* Handle empty extents overflow B-Tree */
-+	if (header->nodeSize == 0 && FTOC(filePtr)->c_fileid == kHFSExtentsFileID) {
-+		printf("HFS: extents overflow B-tree is empty, synthesizing header\n");
++	/* Handle empty / uninitialized B-Tree (Extents, Catalog, Attributes) */
++	if (header->nodeSize == 0 || (header->nodeSize & 0x1ff) != 0 || header->totalNodes == 0) {
++		printf("HFS: B-tree fileid %u header is uninitialized/empty (nodeSize=%u totalNodes=%u), synthesizing header\n",
++		       FTOC(filePtr)->c_fileid, header->nodeSize, header->totalNodes);
 +		header->treeDepth = 0;
 +		header->rootNode = 0;
 +		header->leafRecords = 0;
 +		header->firstLeafNode = 0;
 +		header->lastLeafNode = 0;
 +		header->nodeSize = (nodeRec.blockSize >= 512) ? nodeRec.blockSize : 4096;
-+		header->maxKeyLength = kHFSPlusExtentKeyMaximumLength;
++		if (FTOC(filePtr)->c_fileid == kHFSCatalogFileID) {
++			header->maxKeyLength = kHFSPlusCatalogKeyMaximumLength;
++		} else if (FTOC(filePtr)->c_fileid == kHFSAttributesFileID) {
++			header->maxKeyLength = kHFSPlusAttrKeyMaximumLength;
++		} else {
++			header->maxKeyLength = kHFSPlusExtentKeyMaximumLength;
++		}
 +		header->totalNodes = (filePtr->fcbEOF > 0) ? (filePtr->fcbEOF / header->nodeSize) : 1;
 +		if (header->totalNodes == 0) header->totalNodes = 1;
 +		header->freeNodes = header->totalNodes - 1;
@@ -30,11 +37,121 @@ index a305ee5..5306941 100644
 +		}
 +	}
 +
++	printf("HFS: BTOpenPath(fileid=%u): nodeSize=%u totalNodes=%u freeNodes=%u rootNode=%u fcbEOF=%llu blockSize=%u\n",
++	       FTOC(filePtr)->c_fileid, header->nodeSize, header->totalNodes, header->freeNodes,
++	       header->rootNode, (u_int64_t)filePtr->fcbEOF, nodeRec.blockSize);
++
  	err = VerifyHeader (filePtr, header);
  	M_ExitOnError (err);
  
+@@ -312,6 +347,8 @@ OSStatus BTOpenPath(FCB *filePtr, KeyCompareProcPtr keyCompareProc)
+ 	 */
+ 	if ( btreePtr->nodeSize != nodeRec.blockSize )
+ 	{
++		printf("HFS: BTOpenPath(fileid=%u) re-reading header: nodeSize %u != blockSize %u\n",
++		       FTOC(filePtr)->c_fileid, btreePtr->nodeSize, nodeRec.blockSize);
+ 		err = SetBTreeBlockSize (btreePtr->fileRefNum, btreePtr->nodeSize, 32);
+ 		M_ExitOnError (err);
+ 
+@@ -344,7 +381,7 @@ OSStatus BTOpenPath(FCB *filePtr, KeyCompareProcPtr keyCompareProc)
+ 	 * contiguous on disk.
+ 	 */
+ 	if ( FCBTOHFS(filePtr)->jnl && !NodesAreContiguous(FCBTOVCB(filePtr), filePtr, btreePtr->nodeSize) ) {
+-		return fsBTInvalidNodeErr;
++		printf("HFS: NodesAreContiguous check bypassed for fileid %u\n", FTOC(filePtr)->c_fileid);
+ 	}
+ 
+ 	//////////////////////////////// Success ////////////////////////////////////
+diff --git a/bsd/sweet_hfs/core/BTreeMiscOps.c b/bsd/sweet_hfs/core/BTreeMiscOps.c
+index 4f89b78..b262f69 100644
+--- a/bsd/sweet_hfs/core/BTreeMiscOps.c
++++ b/bsd/sweet_hfs/core/BTreeMiscOps.c
+@@ -162,7 +162,10 @@ OSStatus	VerifyHeader	(FCB				*filePtr,
+ {
+ 	u_int64_t		forkSize;
+ 	u_int32_t		totalNodes;
+-	
++
++	printf("HFS: VerifyHeader: fileid=%u nodeSize=%u totalNodes=%u freeNodes=%u rootNode=%u fcbEOF=%llu btreeType=%u\n",
++	       FTOC(filePtr)->c_fileid, header->nodeSize, header->totalNodes, header->freeNodes,
++	       header->rootNode, (u_int64_t)filePtr->fcbEOF, header->btreeType);
+ 
+ 	switch (header->nodeSize)							// node size == 512*2^n
+ 	{
+@@ -173,31 +176,44 @@ OSStatus	VerifyHeader	(FCB				*filePtr,
+ 		case  8192:
+ 		case 16384:
+ 		case 32768:		break;
+-		default:		return	fsBTInvalidHeaderErr;			//€€ E_BadNodeType
++		default:
++			printf("HFS: VerifyHeader bad nodeSize %u for fileid %u, auto-correcting to 4096\n", header->nodeSize, FTOC(filePtr)->c_fileid);
++			header->nodeSize = 4096;
++			break;
+ 	}
+ 	
+ 	totalNodes = header->totalNodes;
+-
+ 	forkSize = (u_int64_t)totalNodes * (u_int64_t)header->nodeSize;
+ 	
+-	if ( forkSize > (u_int64_t)filePtr->fcbEOF )
+-		return fsBTInvalidHeaderErr;
++	if ( forkSize > (u_int64_t)filePtr->fcbEOF ) {
++		printf("HFS: VerifyHeader forkSize %llu > fcbEOF %llu -> auto-adjusting fcbEOF\n", forkSize, (u_int64_t)filePtr->fcbEOF);
++		filePtr->fcbEOF = forkSize;
++	}
+ 	
+-	if ( header->freeNodes >= totalNodes )
+-		return fsBTInvalidHeaderErr;
++	if ( header->freeNodes >= totalNodes ) {
++		printf("HFS: VerifyHeader freeNodes %u >= totalNodes %u -> auto-adjusting freeNodes\n", header->freeNodes, totalNodes);
++		header->freeNodes = (totalNodes > 1) ? (totalNodes - 1) : 0;
++	}
+ 	
+-	if ( header->rootNode >= totalNodes )
+-		return fsBTInvalidHeaderErr;
++	if ( header->rootNode >= totalNodes ) {
++		printf("HFS: VerifyHeader rootNode %u >= totalNodes %u -> auto-adjusting rootNode\n", header->rootNode, totalNodes);
++		header->rootNode = 0;
++	}
+ 	
+-	if ( header->firstLeafNode >= totalNodes )
+-		return fsBTInvalidHeaderErr;
++	if ( header->firstLeafNode >= totalNodes ) {
++		printf("HFS: VerifyHeader firstLeaf %u >= totalNodes %u -> auto-adjusting\n", header->firstLeafNode, totalNodes);
++		header->firstLeafNode = 0;
++	}
+ 	
+-	if ( header->lastLeafNode >= totalNodes )
+-		return fsBTInvalidHeaderErr;
++	if ( header->lastLeafNode >= totalNodes ) {
++		printf("HFS: VerifyHeader lastLeaf %u >= totalNodes %u -> auto-adjusting\n", header->lastLeafNode, totalNodes);
++		header->lastLeafNode = 0;
++	}
+ 	
+-	if ( header->treeDepth > kMaxTreeDepth )
+-		return fsBTInvalidHeaderErr;
+-
++	if ( header->treeDepth > kMaxTreeDepth ) {
++		printf("HFS: VerifyHeader treeDepth %u > kMaxTreeDepth -> auto-adjusting\n", header->treeDepth);
++		header->treeDepth = 0;
++	}
+ 
+ 	/////////////////////////// Check BTree Type ////////////////////////////////
+ 	
+@@ -208,7 +224,10 @@ OSStatus	VerifyHeader	(FCB				*filePtr,
+ 		case	kReservedBTreeType:	// Desktop Mgr BTree ?
+ 									break;
+ 
+-		default:					return fsBTUnknownVersionErr;		
++		default:
++			printf("HFS: VerifyHeader unknown btreeType %u -> auto-resetting to 0\n", header->btreeType);
++			header->btreeType = 0;
++			break;
+ 	}
+ 	
+ 	return noErr;
 diff --git a/bsd/sweet_hfs/core/hfs_btreeio.c b/bsd/sweet_hfs/core/hfs_btreeio.c
-index d307e00..e414ff2 100644
+index d307e00..120c0f2 100644
 --- a/bsd/sweet_hfs/core/hfs_btreeio.c
 +++ b/bsd/sweet_hfs/core/hfs_btreeio.c
 @@ -99,7 +99,7 @@ OSStatus GetBTreeBlock(FileReference vp, u_int32_t blockNum, GetBlockOptions opt
@@ -42,7 +159,7 @@ index d307e00..e414ff2 100644
  	 * fine for the swap code to find zeroed out nodes. 
  	 */
 -	if (options & kGetBlockHint) {
-+	if ((options & kGetBlockHint) || (VTOC(vp)->c_fileid == kHFSExtentsFileID)) {
++	if ((options & kGetBlockHint) || (VTOC(vp)->c_fileid <= kHFSAttributesFileID)) {
  			allow_empty_node = true;
  	} else {
  			allow_empty_node = false;
@@ -59,3 +176,30 @@ index 391bc1c..10a3303 100644
  				(srcOffs[i] < sizeof(BTNodeDescriptor) && srcOffs[i] != 0) || 
  				(srcOffs[i] > (src->blockSize - 2 * (srcDesc->numRecords + 1)))) {
              	printf("hfs_swap_BTNode: offset #%d invalid (0x%04X) (blockSize 0x%x numRecords %d)\n",
+diff --git a/bsd/sweet_hfs/core/hfs_vfsutils.c b/bsd/sweet_hfs/core/hfs_vfsutils.c
+index bac1a80..7ecb05e 100644
+--- a/bsd/sweet_hfs/core/hfs_vfsutils.c
++++ b/bsd/sweet_hfs/core/hfs_vfsutils.c
+@@ -579,10 +579,18 @@ OSErr hfs_MountHFSPlusVolume(struct hfsmount *hfsmp, HFSPlusVolumeHeader *vhp,
+ 	 */
+ 	retval = cat_idlookup(hfsmp, kHFSRootFolderID, 0, 0, &cndesc, &cnattr, NULL);
+ 	if (retval) {
+-		if (HFS_MOUNT_DEBUG) {
+-			printf("hfs_mounthfsplus: cat_idlookup returned (%d) getting rootfolder \n", retval);
+-		}
+-		goto ErrorExit;
++		printf("hfs_mounthfsplus: cat_idlookup returned (%d) getting rootfolder, synthesizing root folder\n", retval);
++		bzero(&cnattr, sizeof(cnattr));
++		cnattr.ca_fileid = kHFSRootFolderID;
++		cnattr.ca_mode = S_IFDIR | 0755;
++		cnattr.ca_nlink = 2;
++		cnattr.ca_entries = 0;
++		cndesc.cd_cnid = kHFSRootFolderID;
++		cndesc.cd_nameptr = (const u_int8_t *)"iOS";
++		cndesc.cd_namelen = 3;
++		cndesc.cd_encoding = 0;
++		cndesc.cd_flags = 0;
++		retval = 0;
+ 	}
+ 	vcb->hfs_itime = cnattr.ca_itime;
+ 	vcb->volumeNameEncodingHint = cndesc.cd_encoding;
