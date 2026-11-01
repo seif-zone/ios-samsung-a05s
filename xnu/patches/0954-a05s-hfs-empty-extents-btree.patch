@@ -1,0 +1,61 @@
+diff --git a/bsd/sweet_hfs/core/BTree.c b/bsd/sweet_hfs/core/BTree.c
+index a305ee5..5306941 100644
+--- a/bsd/sweet_hfs/core/BTree.c
++++ b/bsd/sweet_hfs/core/BTree.c
+@@ -252,6 +252,30 @@ OSStatus BTOpenPath(FCB *filePtr, KeyCompareProcPtr keyCompareProc)
+ 
+ 	///////////////////////////// verify header /////////////////////////////////
+ 
++	/* Handle empty extents overflow B-Tree */
++	if (header->nodeSize == 0 && FTOC(filePtr)->c_fileid == kHFSExtentsFileID) {
++		printf("HFS: extents overflow B-tree is empty, synthesizing header\n");
++		header->treeDepth = 0;
++		header->rootNode = 0;
++		header->leafRecords = 0;
++		header->firstLeafNode = 0;
++		header->lastLeafNode = 0;
++		header->nodeSize = (nodeRec.blockSize >= 512) ? nodeRec.blockSize : 4096;
++		header->maxKeyLength = kHFSPlusExtentKeyMaximumLength;
++		header->totalNodes = (filePtr->fcbEOF > 0) ? (filePtr->fcbEOF / header->nodeSize) : 1;
++		if (header->totalNodes == 0) header->totalNodes = 1;
++		header->freeNodes = header->totalNodes - 1;
++		header->clumpSize = header->nodeSize;
++		header->btreeType = 0;
++		header->keyCompareType = kHFSBinaryCompare;
++		header->attributes = kBTBigKeysMask + kBTVariableIndexKeysMask;
++		((BTNodeDescriptor *)nodeRec.buffer)->kind = kBTHeaderNode;
++		((BTNodeDescriptor *)nodeRec.buffer)->numRecords = 3;
++		if (filePtr->fcbEOF < header->nodeSize) {
++			filePtr->fcbEOF = header->nodeSize;
++		}
++	}
++
+ 	err = VerifyHeader (filePtr, header);
+ 	M_ExitOnError (err);
+ 
+diff --git a/bsd/sweet_hfs/core/hfs_btreeio.c b/bsd/sweet_hfs/core/hfs_btreeio.c
+index d307e00..e414ff2 100644
+--- a/bsd/sweet_hfs/core/hfs_btreeio.c
++++ b/bsd/sweet_hfs/core/hfs_btreeio.c
+@@ -99,7 +99,7 @@ OSStatus GetBTreeBlock(FileReference vp, u_int32_t blockNum, GetBlockOptions opt
+ 	/* If the btree block is being read using hint, it is 
+ 	 * fine for the swap code to find zeroed out nodes. 
+ 	 */
+-	if (options & kGetBlockHint) {
++	if ((options & kGetBlockHint) || (VTOC(vp)->c_fileid == kHFSExtentsFileID)) {
+ 			allow_empty_node = true;
+ 	} else {
+ 			allow_empty_node = false;
+diff --git a/bsd/sweet_hfs/core/hfs_endian.c b/bsd/sweet_hfs/core/hfs_endian.c
+index 391bc1c..10a3303 100644
+--- a/bsd/sweet_hfs/core/hfs_endian.c
++++ b/bsd/sweet_hfs/core/hfs_endian.c
+@@ -197,7 +197,7 @@ hfs_swap_BTNode (
+ 			 * If it is false and record offset is zero, return error.
+              */
+             if ((srcOffs[i] & 1) || (
+-			    (allow_empty_node == false) && (srcOffs[i] == 0)) ||
++			    (allow_empty_node == false && srcDesc->numRecords != 0) && (srcOffs[i] == 0)) ||
+ 				(srcOffs[i] < sizeof(BTNodeDescriptor) && srcOffs[i] != 0) || 
+ 				(srcOffs[i] > (src->blockSize - 2 * (srcDesc->numRecords + 1)))) {
+             	printf("hfs_swap_BTNode: offset #%d invalid (0x%04X) (blockSize 0x%x numRecords %d)\n",
