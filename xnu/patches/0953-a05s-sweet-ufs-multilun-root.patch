@@ -130,7 +130,12 @@ index 6826d43..275b28b 100644
  	return ENOENT;
  }
  
-@@ -747,15 +757,7 @@ sweet_ufs_init(void)
+@@ -744,18 +754,10 @@
+-static int
+-sweet_ufs_init(void)
++int
++sweet_ufs_init(void)
+ {
  	char want[64] = "userdata";
  	int error;
  
