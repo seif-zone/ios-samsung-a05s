@@ -23,7 +23,7 @@ Built upon the pioneering Qualcomm bring-up work of [ios-topaz](https://github.c
 | **GPU / Metal** | Partial | Adreno 610 (a6xx). PM4 packet generator and `hakios-metal` blit encoder pipeline integrated under `userland/metal/`. |
 | **Battery / Gauge** | Working | Silicon Mitus SM5602 fuel gauge (`0x71`) routed through Qualcomm QUP0 SE2 (`0x04a88000`) on GPIO 6/7 (patch `0951`). |
 | **Storage / RootFS** | Working | Native UFS 2.2 storage (`/dev/block/sda36`, 111 GB userdata). Mounted read-write as Case-Sensitive Apple HFS+ (`ufsroot0`), containing complete genuine iOS 16.7.16 userspace and Dyld shared cache. |
-| **Touchscreen** | In progress | Chipone TDDI / Ilitek on `qupv3_se0_spi` (`0x04a80000`), Reset = GPIO 86, IRQ = GPIO 80 on TLMM WEST tile. |
+| **Touchscreen** | Working | Chipone ICNL9922C TDDI on `qupv3_se0_spi` (`0x04a80000`, GPIO 0..3), Reset = GPIO 86, IRQ = GPIO 80 (patch `0955`). |
 | **Keys** | In progress | PMIC PM6125 power key and volume keys via TLMM GPIOs. |
 | **Identity** | Working | Reported as iPhone X (`iPhone10,3` / `D22AP`) with gesture UI and modern SpringBoard layout. |
 
@@ -58,7 +58,7 @@ Longcheer's Samsung A05s platform shares the Qualcomm SM6225 SoC with Xiaomi's t
 | **Boot Image Header** | Header Version 4 | **Header Version 4** (`BOARD_BOOTIMG_HEADER_VERSION := 4`) | Native Android GKI 2.0 (Kernel 5.10 / Android 13/14) boot header version 4 with 4096-byte pages. Built via `tools/pack_a05s_all.py` / `build_stage3_kernel.py`. |
 | **Internal Storage** | UFS 2.2 / 3.0 (`0x04804000`) | **eMMC 5.1** (`sdhci@7804000`) | XNU UFS driver panics when probing missing hardware. Booted via **MockFS / Ramdisk (`rd=md0`)** embedded directly into the payload. |
 | **Fuel Gauge I2C Bus** | QUP0 SE1 (`0x04a84000`), GPIO 4/5 | **QUP0 SE2 (`0x04a88000`)**, GPIO 6/7 | Patch `0951-a05s-hardware-adaptations.patch`: reconfigures GCC clock branch `qupv3_wrap0_s2` and routes to TLMM WEST tile pins 6 & 7. |
-| **Touchscreen Bus** | I2C (FocalTech FT5452 at `0x38`) | **SPI (`qupv3_se0_spi` at `0x04a80000`)** | Hardware mapping updated for SPI TDDI controller (Chipone / Ilitek) with GPIO 86 Reset and GPIO 80 IRQ. |
+| **Touchscreen Bus** | I2C (FocalTech FT5452 at `0x38`) | **SPI (`qupv3_se0_spi` at `0x04a80000`)** | Patch `0955-a05s-touch-chipone-spi.patch`: QUP0 SE0 SPI bus (GPIO 0..3), Chipone ICNL9922C TDDI packet parser, GPIO 86 Reset, GPIO 80 IRQ. |
 | **Display Panel** | AMOLED (1080&times;2400) | **PLS LCD (1080&times;2400)** | Native 1080&times;2400 framebuffer at `0x5C000000` preserved across boot; LCD bias powered by `pm6125_gpios 6`. |
 
 ---
