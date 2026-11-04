@@ -159,6 +159,13 @@ An interactive simulation engine is available in `docs/index.html` (viewable dir
 │   ├── shim.c            # Core CPU & MMU initialization
 │   └── loader.c          # Embedded XNU payload unpacker
 ├── tools/
+│   ├── bin/                  # Precompiled ARM64 static binaries (hfs_static, newfs_hfs_static)
+│   ├── deploy/               # Stage 3 automated deployment and log extraction suite
+│   │   ├── build_stage3_kernel.py  # Stage 3 Kernel, boot.img & Odin TAR packager
+│   │   ├── pull_boot_log.py        # Persistent UFS console log reader
+│   │   ├── deploy_ios_hfs.sh       # In-recovery HFS+ automated unpacker
+│   │   ├── finalize_stage3.sh      # Permissions, SpringBoard chmod & setup bypass
+│   │   └── format_hfs_via_adb.bat  # 1-click ADB HFS+ formatting script
 │   ├── mkadt.py              # Apple Device Tree generator (samsung,a05s & m269 node)
 │   ├── mkpayload.py          # Mach-O chained fixup resolver and payload builder
 │   ├── pack_a05s_all.py      # Complete Boot Header v4 & OrangeFox flashable bundle generator
