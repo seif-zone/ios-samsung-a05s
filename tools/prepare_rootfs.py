@@ -186,7 +186,7 @@ def main():
     if len(sys.argv) > 1:
         root = sys.argv[1]
     else:
-        root = r'D:\.gemini\antigravity\scratch\rootfs_build\os_root'
+        root = os.environ.get('IOS_ROOTFS', 'rootfs_build/os_root')
 
     print(f'=== SWEET RootFS Tweaks on {root} ===')
     if not os.path.isdir(os.path.join(root, 'System', 'Library', 'CoreServices')):

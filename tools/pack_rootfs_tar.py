@@ -9,8 +9,8 @@ import stat
 import sys
 import tarfile
 
-ROOT = r'D:\.gemini\antigravity\scratch\rootfs_build\os_root'
-OUT_TAR = r'D:\.gemini\antigravity\scratch\ios16-root.tar'
+ROOT = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('IOS_ROOTFS', 'rootfs_build/os_root')
+OUT_TAR = sys.argv[2] if len(sys.argv) > 2 else os.environ.get('OUT_TAR', 'out/ios16-root.tar')
 
 # Known Unix symlinks in the iOS RootFS
 SYMLINKS = {

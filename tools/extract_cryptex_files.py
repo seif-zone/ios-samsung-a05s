@@ -2,12 +2,15 @@
 """Extract missing files from SystemOS and AppOS cryptexes using dissect.apfs
 and ensure all trampoline libraries and root counterparts are in place.
 """
-import os
+import os, sys, argparse
 import dissect.apfs
 
-ROOT = r'D:\.gemini\antigravity\scratch\rootfs_build\os_root'
-SYSOS_DMG = r'D:\.gemini\antigravity\scratch\rootfs_extracted\20H392__iPhone10,3_6\087-86593-047.dmg'
-APPOS_DMG = r'D:\.gemini\antigravity\scratch\rootfs_extracted\20H392__iPhone10,3_6\087-86715-047.dmg'
+def parse_args():
+    parser = argparse.ArgumentParser(description="Extract missing files from SystemOS and AppOS cryptexes into rootfs.")
+    parser.add_argument("--root", default=os.environ.get("IOS_ROOTFS", "rootfs_build/os_root"), help="Path to unpacked rootfs directory")
+    parser.add_argument("--sysos", default=os.environ.get("SYSOS_DMG", "087-86593-047.dmg"), help="Path to SystemOS cryptex dmg")
+    parser.add_argument("--appos", default=os.environ.get("APPOS_DMG", "087-86715-047.dmg"), help="Path to AppOS cryptex dmg")
+    return parser.parse_args()
 
 
 def extract_volume(dmg_path, target_cryptex_dir, c_name):
@@ -45,11 +48,13 @@ def extract_volume(dmg_path, target_cryptex_dir, c_name):
 
 
 def main():
-    os_target = os.path.join(ROOT, 'private', 'preboot', 'Cryptexes', 'OS')
-    app_target = os.path.join(ROOT, 'private', 'preboot', 'Cryptexes', 'App')
+    args = parse_args()
+    root = os.path.abspath(args.root)
+    os_target = os.path.join(root, 'private', 'preboot', 'Cryptexes', 'OS')
+    app_target = os.path.join(root, 'private', 'preboot', 'Cryptexes', 'App')
 
-    extract_volume(SYSOS_DMG, os_target, 'SystemOS')
-    extract_volume(APPOS_DMG, app_target, 'AppOS')
+    extract_volume(args.sysos, os_target, 'SystemOS')
+    extract_volume(args.appos, app_target, 'AppOS')
 
     # Now link/copy cryptex trampolines to /usr/lib in the root
     trampolines = [
@@ -63,7 +68,7 @@ def main():
     print('Copying essential runtime libraries to /usr/lib...')
     for src_rel, dst_rel in trampolines:
         src = os.path.join(os_target, src_rel.replace('/', os.sep))
-        dst = os.path.join(ROOT, dst_rel.replace('/', os.sep))
+        dst = os.path.join(root, dst_rel.replace('/', os.sep))
         if os.path.exists(src) and os.path.getsize(src) > 0:
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             with open(src, 'rb') as f_in, open(dst, 'wb') as f_out:

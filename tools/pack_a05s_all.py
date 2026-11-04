@@ -207,9 +207,9 @@ def main():
     build_odin_tar_md5(boot_img_path, odin_tar_path, arcname="boot.img")
 
     # 4. Prepare authentic decompressed vbmeta.img
-    vbmeta_src = r"C:\Users\seifh\.gemini\antigravity\scratch\vbmeta_extracted\vbmeta.img"
+    vbmeta_src = os.environ.get("VBMETA_IMG", os.path.join(out_dir, "vbmeta.img"))
     vbmeta_out = os.path.join(out_dir, "vbmeta.img")
-    if os.path.isfile(vbmeta_src):
+    if os.path.isfile(vbmeta_src) and os.path.abspath(vbmeta_src) != os.path.abspath(vbmeta_out):
         with open(vbmeta_src, "rb") as sf, open(vbmeta_out, "wb") as df:
             df.write(sf.read())
         print(f"[+] Placed authentic patched vbmeta.img ({os.path.getsize(vbmeta_out):,} bytes)")

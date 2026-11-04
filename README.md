@@ -22,10 +22,12 @@ Built upon the pioneering Qualcomm bring-up work of [ios-topaz](https://github.c
 | **Display** | Working | PLS LCD (1080&times;2400). Scans out from the continuous splash buffer at `0x5C000000` (15 MB carveout, stride 4320). Handed to iOS as iPhone X canvas (`1125x2436`). |
 | **GPU / Metal** | Partial | Adreno 610 (a6xx). PM4 packet generator and `hakios-metal` blit encoder pipeline integrated under `userland/metal/`. |
 | **Battery / Gauge** | Working | Silicon Mitus SM5602 fuel gauge (`0x71`) routed through Qualcomm QUP0 SE2 (`0x04a88000`) on GPIO 6/7 (patch `0951`). |
-| **Storage / RootFS** | Working | eMMC 5.1 (`sdhci@7804000`). Boots cleanly via embedded **MockFS / Ramdisk (`rd=md0`)** inside payload, bypassing missing UFS controllers. |
+| **Storage / RootFS** | Working | Native UFS 2.2 storage (`/dev/block/sda36`, 111 GB userdata). Mounted read-write as Case-Sensitive Apple HFS+ (`ufsroot0`), containing complete genuine iOS 16.7.16 userspace and Dyld shared cache. |
 | **Touchscreen** | In progress | Chipone TDDI / Ilitek on `qupv3_se0_spi` (`0x04a80000`), Reset = GPIO 86, IRQ = GPIO 80 on TLMM WEST tile. |
 | **Keys** | In progress | PMIC PM6125 power key and volume keys via TLMM GPIOs. |
 | **Identity** | Working | Reported as iPhone X (`iPhone10,3` / `D22AP`) with gesture UI and modern SpringBoard layout. |
+
+> 📘 **Step-by-Step Guide:** Looking to replicate this port on your device? Check out the comprehensive [Deployment Guide](docs/DEPLOYMENT_GUIDE.md).
 
 ---
 
