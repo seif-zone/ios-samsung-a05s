@@ -8,7 +8,7 @@ Ported and maintained by **Seif** ([@seif-zone](https://github.com/seif-zone)).
 
 Built upon the pioneering Qualcomm bring-up work of [ios-topaz](https://github.com/dipa-studio) and [dipa-studio/ios-sweet](https://github.com/dipa-studio/ios-sweet) (Redmi Note 10 Pro / Redmi Note 12 4G), and aligned with the [HakiOS project](https://hackios-web.vercel.app/en) by [OOSEX GANG](https://github.com/oosexgang/hakios-xnu-kernel).
 
-> **Notice:** Experimental low-level bring-up. Many peripheral drivers are stubbed or in progress. This project runs entirely out of RAM or dedicated partitions; the kernel is loaded over USB via `fastboot boot` without writing or bricking stock boot partitions.
+> **Notice:** Experimental low-level bring-up. Many peripheral drivers are stubbed or in progress. This project boots Apple Darwin XNU and iOS 16 userland via Samsung Odin (Download Mode) or custom recovery (OrangeFox/TWRP), strictly conforming to Android GKI Boot Image Header Version 4 (`BOARD_BOOTIMG_HEADER_VERSION := 4`).
 
 ---
 
@@ -16,7 +16,7 @@ Built upon the pioneering Qualcomm bring-up work of [ios-topaz](https://github.c
 
 | Subsystem | Status | Implementation Details |
 | :--- | :--- | :--- |
-| **Bootloader** | Working | Stock Samsung ABL (unlocked) &rarr; `fastboot boot` of `a05s-boot.img` (Header Version 2) &rarr; `shim` &rarr; XNU. |
+| **Bootloader** | Working | Stock Samsung ABL (unlocked) &rarr; Odin / Recovery flash of `a05s-boot.img` (GKI Header Version 4) &rarr; `shim` &rarr; XNU. |
 | **CPU (SMP)** | Working | 4&times; Kryo 260 Gold (Cortex-A73, MPIDR `0x100`..`0x103`), 16K pages, GICv3, ARM generic timers. Silver cores parked (see below). |
 | **Memory** | Working | RAM base `0xb0000000`, 4 GiB / 6 GiB LPDDR4X support. All reserved carve-outs (Modem, ADSP, CDSP, Splash) protected below `0x63900000`. |
 | **Display** | Working | PLS LCD (1080&times;2400). Scans out from the continuous splash buffer at `0x5C000000` (15 MB carveout, stride 4320). Handed to iOS as iPhone X canvas (`1125x2436`). |
@@ -55,7 +55,7 @@ Longcheer's Samsung A05s platform shares the Qualcomm SM6225 SoC with Xiaomi's t
 
 | Hardware / Subsystem | Xiaomi Topaz / Sweet | Samsung Galaxy A05s (`m269`) | Fix / Adaptation in this Port |
 | :--- | :--- | :--- | :--- |
-| **Boot Image Header** | Header Version 4 | **Header Version 2** (`BOARD_BOOTIMG_HEADER_VERSION := 2`) | `shim/build-a05s.sh` enforces `--header_version 2`, `--base 0x00000000`, `--pagesize 4096`. Samsung ABL rejects v4 images. |
+| **Boot Image Header** | Header Version 4 | **Header Version 4** (`BOARD_BOOTIMG_HEADER_VERSION := 4`) | Native Android GKI 2.0 (Kernel 5.10 / Android 13/14) boot header version 4 with 4096-byte pages. Built via `tools/pack_a05s_all.py` / `build_stage3_kernel.py`. |
 | **Internal Storage** | UFS 2.2 / 3.0 (`0x04804000`) | **eMMC 5.1** (`sdhci@7804000`) | XNU UFS driver panics when probing missing hardware. Booted via **MockFS / Ramdisk (`rd=md0`)** embedded directly into the payload. |
 | **Fuel Gauge I2C Bus** | QUP0 SE1 (`0x04a84000`), GPIO 4/5 | **QUP0 SE2 (`0x04a88000`)**, GPIO 6/7 | Patch `0951-a05s-hardware-adaptations.patch`: reconfigures GCC clock branch `qupv3_wrap0_s2` and routes to TLMM WEST tile pins 6 & 7. |
 | **Touchscreen Bus** | I2C (FocalTech FT5452 at `0x38`) | **SPI (`qupv3_se0_spi` at `0x04a80000`)** | Hardware mapping updated for SPI TDDI controller (Chipone / Ilitek) with GPIO 86 Reset and GPIO 80 IRQ. |
@@ -73,11 +73,11 @@ XNU requires 16K translation granule for both kernel and iOS 16 userland (hardco
 
 ```
 Samsung ABL (unlocked)
-  -> fastboot boot a05s-boot.img                  (Boot v2, RAM only)
+  -> Samsung Odin / Recovery boots a05s-boot.img  (GKI Header v4)
      -> shim on Silver CPU0: reads MMFR0, wakes Gold CPU 0x100 via PSCI, parks in WFI
         -> shim on Gold CPU 0: sets up GICv3, locates XNU payload behind _end
            -> XNU Mach-O + Apple Device Tree (ADT) + boot-args
-              -> Mounts MockFS / Ramdisk (/dev/md0)
+              -> Mounts Apple HFS+ (/dev/block/sda37 userdata)
                  -> dyld + shared cache -> launchd (PID 1) -> SpringBoard
 ```
 
@@ -105,12 +105,12 @@ python3 tools/mkpayload.py out/artifacts/xnu-kernel/kernel.development.sweet out
     --cmdline "console=null earlycon=msm_geni_serial,0x4a90000 sweetfb_console=1 cpus=4 debug=0x14e rd=md0 -v"
 ```
 
-### 3. Pack Samsung Boot Image (Header Version 2)
-Cross-compile the A05s `shim` with aarch64 toolchain, append payload, and pack with Samsung header v2:
+### 3. Pack Samsung Boot Image (GKI Header Version 4) & Odin TAR
+Cross-compile the A05s `shim` with aarch64 toolchain, append payload, and pack with Android GKI Boot Image Header Version 4 (`BOARD_BOOTIMG_HEADER_VERSION := 4`):
 
 ```sh
-bash shim/build-a05s.sh out/a05s.payload
-# Outputs: shim/out/a05s-boot.img
+python3 tools/deploy/build_stage3_kernel.py
+# Outputs: out/release_assets/a05s-stage3-boot.img and AP_A05s_iOS16_Stage3_GUI.tar.md5
 ```
 
 ---
@@ -128,20 +128,31 @@ An interactive simulation engine is available in `docs/index.html` (viewable dir
 
 ---
 
-## Booting on Device (Fastboot Tethered Boot)
+## Booting on Device (Samsung Odin Download Mode & Recovery)
 
-> **Safe Testing:** Always use `fastboot boot` to run from RAM without flashing or modifying physical partitions.
+> **Note on Samsung Hardware:** Retail Samsung Galaxy devices (including A05s / SM-A057F) do **not** have a native bootloader Fastboot mode (`fastboot boot` is not supported by Samsung Knox ABL). Flashing and deployment are performed via **Samsung Odin (Download Mode)** or **Custom Recovery (OrangeFox/TWRP)**.
 
-1. Unlock the bootloader via Samsung Developer Settings (`OEM unlocking`) and Odin Device Unlock Mode.
-2. Put the device into Fastboot mode:
+### Method 1: Flashing via Samsung Odin (Recommended)
+1. Unlock the bootloader via Samsung Developer Settings (`OEM unlocking`) and Device Unlock Mode (holding Vol Up + Vol Down while plugging in USB).
+2. Boot into **Samsung Download Mode (ODIN Mode)**:
    ```sh
-   adb reboot bootloader
+   adb reboot download
    ```
-3. Boot the image directly in RAM:
-   ```sh
-   fastboot boot shim/out/a05s-boot.img
-   ```
-4. To return to stock Samsung One UI Android, simply hold **Power + Volume Down** to reboot normally.
+   *(Or power off, hold Volume Up + Volume Down, and plug in the USB cable).*
+3. Open **Samsung Odin v3.14.4+**.
+4. In the **AP** slot, select `AP_A05s_iOS16_Stage3_GUI.tar.md5`.
+5. Click **Start** to flash the Stage 3 Kernel.
+
+### Method 2: Flashing via Custom Recovery (OrangeFox / TWRP)
+If you have OrangeFox Recovery installed:
+```sh
+adb push a05s-stage3-boot.img /tmp/boot.img
+adb shell "dd if=/tmp/boot.img of=/dev/block/by-name/boot"
+adb reboot
+```
+
+### Returning to Stock Samsung Android
+To revert back to official Samsung One UI, flash the official 4-piece stock firmware (`BL`, `AP`, `CP`, `CSC`) via Samsung Odin in Download Mode.
 
 ---
 

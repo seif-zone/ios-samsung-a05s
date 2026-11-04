@@ -13,7 +13,7 @@ This guide describes how to replicate and deploy genuine Apple iOS 16 (Darwin XN
                                           |
                                           v
                       +---------------------------------------+
-                      | a05s-stage3-boot.img (Header v2 / v4) |
+                      | a05s-stage3-boot.img (GKI Header v4)  |
                       | - Shim ELF Loader (Silver CPU0 Entry) |
                       | - PSCI CPU_ON -> Kryo Gold Core (A73) |
                       | - Mach-O Kernel Payload + A05s ADT    |
@@ -43,7 +43,7 @@ This guide describes how to replicate and deploy genuine Apple iOS 16 (Darwin XN
 
 1. **Target Device:** Samsung Galaxy A05s (`SM-A057F`, `SM-A057F/DS`), unlocked bootloader.
 2. **Recovery Environment:** OrangeFox Recovery (or TWRP) installed on the recovery partition.
-3. **Host Computer:** Linux (Ubuntu 22.04+) or Windows 10/11 with Python 3.10+ and Android Platform Tools (`adb`, `fastboot`).
+3. **Host Computer:** Linux (Ubuntu 22.04+) or Windows 10/11 with Python 3.10+, Android Platform Tools (`adb`), and Samsung Odin v3.14.4+ (Samsung Knox uses Odin Download Mode; native bootloader fastboot is absent).
 4. **USB Cable:** Quality USB Type-C data cable.
 5. **Storage Requirement:** Minimum 32 GB free space on internal UFS (the `userdata` partition `/dev/block/sda36` is 111 GB).
 

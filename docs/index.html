@@ -473,7 +473,7 @@
         arch: "Qualcomm SM6225",
         description: {
           title: "System Standby & Initial Cold State",
-          what: "Device is powered off with DDR RAM uninitialized. Application Processor (AP) in cold reset state awaiting power key or fastboot pulse.",
+          what: "Device is powered off with DDR RAM uninitialized. Application Processor (AP) in cold reset state awaiting power key pulse.",
           why: "Pre-execution baseline for measuring real-world boot latency and power-on sequence on Samsung SM-A057F.",
           hw: "PMIC PM6125 power rails standing by, eMMC 5.1 storage idle.",
           source: "Board cold power reset."
@@ -494,13 +494,13 @@
         status: "ABL_EXEC",
         arch: "Kryo Silver (A53)",
         description: {
-          title: "Samsung ABL Bootloader & Header v2 Verification (4.85s)",
-          what: "Samsung's secondary bootloader (ABL) parses fastboot commands, validates Android Boot Image Header Version 2 signature, and copies the kernel Image into RAM at 0x40008000.",
-          why: "Samsung SM-A057F enforces BOARD_BOOTIMG_HEADER_VERSION := 2 with 4096-byte pages. Android v4 boot images are silently rejected.",
+          title: "Samsung ABL Bootloader & GKI Header v4 Verification (4.85s)",
+          what: "Samsung's secondary bootloader (ABL) validates Android GKI Boot Image Header Version 4 signature, and copies the kernel Image into RAM at 0x40008000.",
+          why: "Samsung SM-A057F enforces Android GKI BOARD_BOOTIMG_HEADER_VERSION := 4 with 4096-byte pages.",
           hw: "Kryo 260 Silver Core 0 executing at EL2. Display splash framebuffer configured at 0x5c000000.",
-          source: "shim/build-a05s.sh: mkbootimg --header_version 2 --base 0x00000000 --pagesize 4096"
+          source: "tools/pack_a05s_all.py: build_boot_img_v4 (BOARD_BOOTIMG_HEADER_VERSION := 4)"
         },
-        log: "[0.000000] Samsung ABL initialized (Knox warranty state: 0x1 unlocked).\n[1.240120] Validating boot image header version 2 (pagesize 4096)...\n[2.850300] FASTBOOT: loading kernel Image to 0x40008000 via USB...\n[4.850000] Jumping to shim entry point at EL2."
+        log: "[0.000000] Samsung ABL initialized (Knox warranty state: 0x1 unlocked).\n[1.240120] Validating GKI boot image header version 4 (pagesize 4096)...\n[2.850300] ABL: loading kernel Image from boot partition to 0x40008000...\n[4.850000] Jumping to shim entry point at EL2."
       },
       {
         id: 2,

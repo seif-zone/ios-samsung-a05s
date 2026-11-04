@@ -4,7 +4,7 @@
 
 - **Port Lead & Maintainer:** **Seif** ([@seif-zone](https://github.com/seif-zone))
   - Samsung Galaxy A05s platform bring-up.
-  - Samsung ABL Android Boot Header Version 2 implementation (`BOARD_BOOTIMG_HEADER_VERSION := 2`).
+  - Samsung ABL Android Boot Header Version 4 implementation for GKI (`BOARD_BOOTIMG_HEADER_VERSION := 4`).
   - Qualcomm SM6225 / Khaje register mapping for Longcheer `m269` devicetree.
   - Silicon Mitus SM5602 battery fuel gauge adaptation on QUP0 SE2 (`0x04a88000`) on GPIO 6/7 (TLMM WEST tile).
   - eMMC 5.1 storage bypass via embedded MockFS / Ramdisk (`rd=md0`) payload bootstrap.

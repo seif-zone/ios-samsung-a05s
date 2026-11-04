@@ -16,35 +16,35 @@ This document details how this repository aligns with the upstream [HakiOS proje
 |---|---|---|---|
 | **SoC** | Qualcomm Snapdragon 778G (`SM7325` / `sc7280`) | Qualcomm Snapdragon 680 (`SM6225` / `bengal`) | Different register base addresses (`soc.args`), GICv3 offsets, and OPP clock steps. |
 | **CPU Cluster** | 4x Cortex-A78 + 4x Cortex-A55 | 4x Kryo 260 Gold (A73) + 4x Kryo 260 Silver (A53) | **CRITICAL:** Cortex-A53 lacks 16KB translation granule (`TGran16 = 0`). Boot requires PSCI handoff to Kryo Gold! |
-| **Bootloader** | Little Kernel (ABL) with Mu-Silicium UEFI port | Samsung Knox ABL (Little Kernel) | Samsung ABL strictly enforces **Android Boot Image Header Version 2** (4096-byte pages). Header v3/v4 is rejected. |
+| **Bootloader** | Little Kernel (ABL) with Mu-Silicium UEFI port | Samsung Knox ABL (Little Kernel) with Odin Download Mode | Samsung Galaxy A05s conforms to **Android GKI Boot Image Header Version 4** (4096-byte pages, `BOARD_BOOTIMG_HEADER_VERSION := 4`). Flashing is executed via Odin or custom recovery (native bootloader fastboot is absent on Samsung Knox). |
 | **GPU** | Adreno 642L | Adreno 610 | Both are Qualcomm A6xx architecture; both use the exact same PM4 packet format and command processor. |
 | **Storage** | UFS 2.2 (`ufs@1d84000`) | eMMC 5.1 (`sdhci@7804000`) | RAM-only MockFS rootfs (`rd=md0`) provides identical safe execution across both without storage writes. |
 | **Battery Gauge**| Audio DSP proxy | SM5602 I2C Fuel Gauge | Routed via QUP0 SE2 (`0x04a88000`) on TLMM West GPIO 6/7. |
 
 ---
 
-## 2. Boot Protocol & Zero-Flashing Policy
+## 2. Boot Protocol & Flashing Architecture (Odin Download Mode & Recovery)
 
-Following the HakiOS core philosophy:
-> *"By default the loader goes into RAM through `fastboot boot`, the system lives in RAM for a session, and a reboot brings the phone back to its own Android."*
+Samsung Galaxy devices do not implement a native bootloader fastboot mode; Samsung Knox ABL boots via the Samsung Download Mode (ODIN protocol) or passes control to custom recovery.
 
-Our port adheres strictly to this zero-risk execution method:
-1. **Host PC:** Prepares the self-contained boot package:
+Our port conforms 1:1 to Samsung's Android 13/14 GKI boot image format:
+1. **Host PC:** Prepares the GKI Header v4 boot package and Odin TAR:
    ```bash
-   tools/mkbootimg.py \
+   tools/pack_a05s_all.py \
      --kernel shim/shim.bin \
-     --ramdisk out/a05s.payload \
-     --base 0x00000000 \
+     --payload out/a05s.payload \
+     --header_version 4 \
      --pagesize 4096 \
-     --header_version 2 \
-     --cmdline "earlycon=msm_geni_serial,0x04a90000 serial=3 debug=0x14e rd=md0 phys_base=0xb0000000" \
-     -o out/a05s-boot.img
+     -o out/a05s-stage3-boot.img
    ```
-2. **Device Deployment (No Flashing!):**
-   ```bash
-   fastboot boot out/a05s-boot.img
-   ```
-3. **Execution:** The entire Darwin kernel, MockFS ramdisk, and userland run solely within DDR RAM (`0xb0000000` carve-out). A simple power off or reboot immediately returns the phone to stock One UI Android.
+2. **Device Deployment:**
+   - **Odin Flashing:** Flash `AP_A05s_iOS16_Stage3_GUI.tar.md5` into the **AP** slot via Samsung Odin while the phone is in Download Mode (`adb reboot download`).
+   - **Recovery Flashing:** Push `a05s-stage3-boot.img` via OrangeFox / TWRP recovery and write directly to `/dev/block/by-name/boot`:
+     ```bash
+     adb push out/a05s-stage3-boot.img /tmp/boot.img
+     adb shell "dd if=/tmp/boot.img of=/dev/block/by-name/boot"
+     ```
+3. **Execution & Reversibility:** The Darwin kernel boots via the shim, mounts the Apple HFS+ filesystem, and executes iOS 16 SpringBoard. Re-flashing stock Samsung 4-piece firmware (`BL`, `AP`, `CP`, `CSC`) via Odin restores stock One UI Android completely.
 
 ---
 

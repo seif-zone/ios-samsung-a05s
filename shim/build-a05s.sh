@@ -1,6 +1,7 @@
 #!/bin/bash
-# Build the shim and wrap it in a boot.img v2 for Samsung Galaxy A05s (SM-A057F / m269).
-# Samsung ABL expects boot image header version 2 (BOARD_BOOTIMG_HEADER_VERSION := 2).
+# Build the shim and wrap it in a GKI boot.img v4 for Samsung Galaxy A05s (SM-A057F / m269).
+# Samsung Galaxy A05s is a GKI device using Android Boot Image Header Version 4 (BOARD_BOOTIMG_HEADER_VERSION := 4).
+# Samsung Knox ABL boots via Odin Download Mode (no native bootloader fastboot).
 set -euo pipefail
 
 PAYLOAD=""
@@ -46,12 +47,11 @@ fi
 (cd out && rm -rf rd && mkdir rd && cd rd && find . | cpio -o -H newc --quiet | gzip -9 > ../ramdisk.bin)
 
 MKBOOTIMG=${MKBOOTIMG:-mkbootimg}
-echo "[*] Packing Samsung A05s boot.img (Header Version 2)..."
+echo "[*] Packing Samsung A05s GKI boot.img (Header Version 4)..."
 $MKBOOTIMG \
-	--header_version 2 \
+	--header_version 4 \
 	--kernel out/Image \
 	--ramdisk out/ramdisk.bin \
-	--base 0x00000000 \
 	--pagesize 4096 \
 	--os_version 13.0.0 \
 	--os_patch_level 2025-01 \
