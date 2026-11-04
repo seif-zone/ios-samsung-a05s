@@ -56,7 +56,7 @@ Longcheer's Samsung A05s platform shares the Qualcomm SM6225 SoC with Xiaomi's t
 | Hardware / Subsystem | Xiaomi Topaz / Sweet | Samsung Galaxy A05s (`m269`) | Fix / Adaptation in this Port |
 | :--- | :--- | :--- | :--- |
 | **Boot Image Header** | Header Version 4 | **Header Version 4** (`BOARD_BOOTIMG_HEADER_VERSION := 4`) | Native Android GKI 2.0 (Kernel 5.10 / Android 13/14) boot header version 4 with 4096-byte pages. Built via `tools/pack_a05s_all.py` / `build_stage3_kernel.py`. |
-| **Internal Storage** | UFS 2.2 / 3.0 (`0x04804000`) | **eMMC 5.1** (`sdhci@7804000`) | XNU UFS driver panics when probing missing hardware. Booted via **MockFS / Ramdisk (`rd=md0`)** embedded directly into the payload. |
+| **Internal Storage** | UFS 2.2 / 3.0 (`0x04804000`) | **UFS 2.2 (Multi-LUN)** (`/dev/block/sda36`) | Multi-LUN UFS 2.2 driver support (patch `0953`). Case-Sensitive Apple HFS+ journaled rootfs mounted read-write on `userdata` (`sda37`). |
 | **Fuel Gauge I2C Bus** | QUP0 SE1 (`0x04a84000`), GPIO 4/5 | **QUP0 SE2 (`0x04a88000`)**, GPIO 6/7 | Patch `0951-a05s-hardware-adaptations.patch`: reconfigures GCC clock branch `qupv3_wrap0_s2` and routes to TLMM WEST tile pins 6 & 7. |
 | **Touchscreen Bus** | I2C (FocalTech FT5452 at `0x38`) | **SPI (`qupv3_se0_spi` at `0x04a80000`)** | Patch `0955-a05s-touch-chipone-spi.patch`: QUP0 SE0 SPI bus (GPIO 0..3), Chipone ICNL9922C TDDI packet parser, GPIO 86 Reset, GPIO 80 IRQ. |
 | **Display Panel** | AMOLED (1080&times;2400) | **PLS LCD (1080&times;2400)** | Native 1080&times;2400 framebuffer at `0x5C000000` preserved across boot; LCD bias powered by `pm6125_gpios 6`. |
@@ -166,7 +166,7 @@ To revert back to official Samsung One UI, flash the official 4-piece stock firm
 ├── pull-firmware.sh      # Isolated ADB firmware extractor
 ├── HAKIOS.md             # In-depth HakiOS integration & compatibility guide
 ├── shim/                 # Bare-metal A05s boot shim, Gold CPU PSCI handoff, GICv3 setup
-│   ├── build-a05s.sh     # Samsung Boot Header v2 packaging pipeline
+│   ├── build-a05s.sh     # Samsung GKI Boot Header v4 packaging pipeline
 │   ├── shim.c            # Core CPU & MMU initialization
 │   └── loader.c          # Embedded XNU payload unpacker
 ├── tools/
@@ -188,8 +188,13 @@ To revert back to official Samsung One UI, flash the official 4-piece stock firm
 ├── userland/                 # GPU injection, EAGL shim, and audio HAL plugins
 │   └── metal/                # Adreno 610 Metal PM4 command buffer builder & probe
 └── xnu/patches/              # Patch series applied cleanly to Apple XNU 8796 tree
-    ├── 0080-0082             # SM6225 architecture and Gold CPU topology
-    └── 0951                  # Samsung A05s SM5602 gauge on SE2 (GPIO 6/7)
+    ├── 0001-0152             # Darwin XNU platform bring-up, GICv3, PSCI, Display
+    ├── 0900-0950             # Adreno 610 GPU, Mesa DRM, Audio, Memory pools
+    ├── 0951                  # Samsung A05s SM5602 fuel gauge on SE2 (GPIO 6/7)
+    ├── 0952                  # Diagnostics breadcrumbs & panic logging
+    ├── 0953                  # Multi-LUN UFS 2.2 storage block driver
+    ├── 0954                  # Apple HFS+ empty extents B-Tree auto-synthesis
+    └── 0955                  # Chipone ICNL9922C TDDI SPI touchscreen driver
 ```
 
 ---
@@ -222,7 +227,7 @@ The Stage 2 pipeline constructs the full official **iOS 16.7.16 (`20H392`)** roo
 
 ## Credits and Acknowledgments
 
-- **Lead Developer & Maintainer:** **Seif** ([@seif-zone](https://github.com/seif-zone)) &ndash; Samsung Galaxy A05s port, Samsung ABL Header v2 packaging, Longcheer `m269` devicetree & register mapping, SM5602 SE2 adaptations, eMMC MockFS integration, HakiOS alignment.
+- **Lead Developer & Maintainer:** **Seif** ([@seif-zone](https://github.com/seif-zone)) &ndash; Samsung Galaxy A05s port, GKI Header v4 & Odin TAR packaging, Longcheer `m269` devicetree & register mapping, SM5602 SE2 adaptations, Chipone ICNL9922C SPI touch driver, Multi-LUN UFS 2.2 & Apple HFS+ integration, HakiOS alignment.
 - **HakiOS Team:** [OOSEX GANG](https://github.com/oosexgang/hakios-xnu-kernel) &ndash; HakiOS architecture, drivers configuration standard, `hakios-metal` Adreno Metal command pipeline, and `hakios-sm7325` reference bring-up.
 - **ios-topaz & ios-sweet teams:** [dipa-studio](https://github.com/dipa-studio/ios-sweet) &ndash; Qualcomm SM6225 architecture foundation, Cortex-A53 PFZ atomics emulation, PSCI Gold CPU wake-up handoff.
 - **blacktop:** [darwin-xnu-build](https://github.com/blacktop/darwin-xnu-build) &ndash; Automated XNU compilation harness.

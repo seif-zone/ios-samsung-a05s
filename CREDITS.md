@@ -7,7 +7,8 @@
   - Samsung ABL Android Boot Header Version 4 implementation for GKI (`BOARD_BOOTIMG_HEADER_VERSION := 4`).
   - Qualcomm SM6225 / Khaje register mapping for Longcheer `m269` devicetree.
   - Silicon Mitus SM5602 battery fuel gauge adaptation on QUP0 SE2 (`0x04a88000`) on GPIO 6/7 (TLMM WEST tile).
-  - eMMC 5.1 storage bypass via embedded MockFS / Ramdisk (`rd=md0`) payload bootstrap.
+  - Chipone ICNL9922C TDDI SPI touchscreen driver on QUP0 SE0 (`0x04a80000`, GPIO 0..3, RST 86, IRQ 80).
+  - Native Multi-LUN UFS 2.2 storage block driver and Apple HFS+ journaled root filesystem integration.
   - Apple Device Tree (ADT) hardware definition for `samsung,a05s` and `samsung,m269`.
   - HakiOS ecosystem integration, `device.conf`, `soc.args`, and Adreno 610 Metal PM4 command driver integration.
 
