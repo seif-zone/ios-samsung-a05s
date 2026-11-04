@@ -24,9 +24,15 @@ for folder in sbin bin usr Applications Library cores dev Developer private Syst
     fi
 done
 
-echo "[3/6] Setting permissions for executables..."
+echo "[3/6] Setting permissions for executables and system daemons..."
 $HFS $ROOT chmod 755 /sbin/launchd 2>/dev/null || true
 $HFS $ROOT chmod 755 /usr/lib/dyld 2>/dev/null || true
+$HFS $ROOT chmod 755 /System/Library/CoreServices/SpringBoard.app/SpringBoard 2>/dev/null || true
+$HFS $ROOT chmod 755 /usr/libexec/backboardd 2>/dev/null || true
+$HFS $ROOT chmod 755 /usr/libexec/containermanagerd 2>/dev/null || true
+$HFS $ROOT chmod 755 /usr/libexec/logd 2>/dev/null || true
+$HFS $ROOT chmod 755 /usr/libexec/mobileactivationd 2>/dev/null || true
+$HFS $ROOT chmod 755 /usr/libexec/UserEventAgent 2>/dev/null || true
 
 echo "[4/6] Creating genuine Apple symbolic links..."
 $HFS $ROOT symlink private/etc /etc 2>/dev/null || true

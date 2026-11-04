@@ -99,14 +99,14 @@ set /p REBOOT_CHOICE="Do you want to reboot device to Download Mode right now vi
 if /i "%REBOOT_CHOICE%"=="Y" (
     echo [*] Rebooting device to Samsung Download Mode...
     "%ADB%" reboot download
-    echo [+] Device rebooted! Now open Odin and flash AP_A05s_iOS16_Kernel_Patched.tar.md5 in [AP].
+    echo [+] Device rebooted! Now open Odin and flash AP_A05s_iOS16_Stage3_GUI.tar.md5 in [AP].
 ) else (
     echo.
     echo [*] Manual Download Mode Steps:
     echo     1. Power Off device.
     echo     2. Hold Vol+ and Vol- while plugging in USB cable.
     echo     3. Press Vol+ once to enter Download Mode.
-    echo     4. In Odin, flash AP_A05s_iOS16_Kernel_Patched.tar.md5 in [AP].
+    echo     4. In Odin, flash AP_A05s_iOS16_Stage3_GUI.tar.md5 in [AP].
 )
 echo.
 pause
